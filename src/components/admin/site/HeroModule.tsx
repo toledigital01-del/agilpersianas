@@ -24,7 +24,7 @@ const DEFAULTS: Hero = {
   subtitle: "Responda 6 perguntas e descubra qual persiana é ideal para o seu espaço — em 60 segundos.",
   cta: "Descobrir minha persiana ideal",
   cta2: "Ver catálogo",
-  ctaUrl: "#quiz-persiana-ideal",
+  ctaUrl: "#simulador-ambiente",
   cta2Url: "/catalogo",
   ctaEnabled: true,
   cta2Enabled: true,
@@ -63,7 +63,7 @@ export function HeroModule() {
           </div>
           <div>
             <Label>URL ou âncora</Label>
-            <Input value={hero.ctaUrl} onChange={(e) => update({ ctaUrl: e.target.value })} placeholder="#quiz ou /catalogo" />
+            <Input value={hero.ctaUrl} onChange={(e) => update({ ctaUrl: e.target.value })} placeholder="#simulador-ambiente ou /catalogo" />
           </div>
         </div>
         <ToggleField

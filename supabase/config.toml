@@ -1,1 +1,4 @@
 project_id = "bgtgpttcdafhxvztruyt"
+
+[functions.simulate-room]
+verify_jwt = false

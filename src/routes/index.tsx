@@ -18,7 +18,7 @@ import { LumiWidget } from "@/components/site/LumiWidget";
 
 import { AutomationSection } from "@/components/site/AutomationSection";
 import { MosquitoSection } from "@/components/site/MosquitoSection";
-import { QuizMatch } from "@/components/site/QuizMatch";
+import { RoomSimulator } from "@/components/site/RoomSimulator";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 
 export const Route = createFileRoute("/")({
@@ -51,8 +51,8 @@ function Index() {
         <HeroBanner />
         {/* 2) Faixa laranja com benefícios — logo abaixo do banner */}
         <PromoStrip />
-        {/* 3) ⭐ QUIZ INTELIGENTE — direto, sem introdução */}
-        <QuizMatch />
+        {/* 3) ⭐ SIMULADOR IA — instala a persiana na foto da janela do cliente */}
+        <RoomSimulator />
         {/* 5) Produtos em destaque */}
         <FeaturedProducts />
         {/* 5b) Mais vendidas essa semana */}

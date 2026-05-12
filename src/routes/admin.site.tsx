@@ -7,7 +7,6 @@ import { ContactModule } from "@/components/admin/site/ContactModule";
 import { FooterModule } from "@/components/admin/site/FooterModule";
 import { SeoModule } from "@/components/admin/site/SeoModule";
 import { MediaLibraryModule } from "@/components/admin/site/MediaLibraryModule";
-import { QuizModule } from "@/components/admin/site/QuizModule";
 import { BestSellersModule } from "@/components/admin/site/BestSellersModule";
 import { FeaturedModule } from "@/components/admin/site/FeaturedModule";
 import { BeforeAfterModule } from "@/components/admin/site/BeforeAfterModule";
@@ -34,7 +33,6 @@ function SiteContent() {
         <HeroModule />
         <BannersModule />
         <PromoStripModule />
-        <QuizModule />
         <BestSellersModule />
         <FeaturedModule />
         <BeforeAfterModule />
