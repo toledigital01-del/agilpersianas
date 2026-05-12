@@ -20,6 +20,8 @@ type Product = {
   prompt: string;
   thumbs: { color: string; img: string; hex: string }[];
   href: string;
+  cover: string;
+  category: string;
 };
 
 const PRODUCTS: Product[] = [
@@ -29,6 +31,8 @@ const PRODUCTS: Product[] = [
     description: "Bloqueio total da luz, textura sutil pinpoint. Ideal para quartos.",
     prompt: "persiana rolô blackout texturizada pinpoint, tecido opaco que bloqueia 100% da luz, rolada no topo da janela",
     href: "/rolo-blackout-pinpoint",
+    cover: pinpointCinza,
+    category: "rolo",
     thumbs: [
       { color: "Branca", img: pinpointBranca, hex: "#F5F1EA" },
       { color: "Bege", img: pinpointBege, hex: "#C9B89A" },
@@ -42,6 +46,8 @@ const PRODUCTS: Product[] = [
     description: "Textura linho premium com bloqueio total. Acabamento sofisticado.",
     prompt: "persiana rolô blackout texturizada estilo linho, tecido opaco com textura visível, rolo no topo da janela",
     href: "/rolo-blackout-texturizado",
+    cover: textBege,
+    category: "rolo",
     thumbs: [
       { color: "Branca", img: textBranca, hex: "#F5F1EA" },
       { color: "Bege rústico", img: textBege, hex: "#B8A07A" },
@@ -54,6 +60,8 @@ const PRODUCTS: Product[] = [
     description: "Filtra a luz e mantém a vista. Perfeito para sala e home office.",
     prompt: "persiana rolô tela solar screen, tecido translúcido cinza fino que filtra luz mas mantém visão da janela",
     href: "/persiana-solar-screen",
+    cover: liso,
+    category: "rolo",
     thumbs: [
       { color: "Branca", img: liso, hex: "#EFEFEF" },
       { color: "Cinza", img: textCinza, hex: "#7C7C7C" },
@@ -61,7 +69,9 @@ const PRODUCTS: Product[] = [
   },
 ];
 
-const AMBIENTS = ["Quarto", "Sala", "Cozinha", "Home office", "Outro"];
+const CATEGORIES: { id: string; label: string; hint: string }[] = [
+  { id: "rolo", label: "Persiana Rolô", hint: "Ambientes internos · sob medida" },
+];
 
 async function fileToDataUrl(file: File): Promise<string> {
   return new Promise((res, rej) => {
@@ -93,6 +103,21 @@ async function downscaleImage(dataUrl: string, maxSide = 1280): Promise<string> 
 }
 
 export function RoomSimulator() {
+  return <RoomSimulatorInner />;
+}
+
+function StepHeader({ n, title }: { n: number; title: string }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-xs font-bold text-primary-foreground shadow-md">
+        {n}
+      </span>
+      <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground/80">{title}</span>
+    </div>
+  );
+}
+
+function RoomSimulatorInner() {
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const [original, setOriginal] = useState<string | null>(null);
@@ -100,11 +125,13 @@ export function RoomSimulator() {
   const [loading, setLoading] = useState(false);
   const [productId, setProductId] = useState<string>(PRODUCTS[0].id);
   const [colorIdx, setColorIdx] = useState(0);
-  const [ambient, setAmbient] = useState(AMBIENTS[0]);
+  const [categoryId, setCategoryId] = useState<string>(CATEGORIES[0].id);
   const [compare, setCompare] = useState(50);
 
   const product = PRODUCTS.find((p) => p.id === productId)!;
   const color = product.thumbs[Math.min(colorIdx, product.thumbs.length - 1)];
+  const category = CATEGORIES.find((c) => c.id === categoryId) ?? CATEGORIES[0];
+  const productsInCategory = PRODUCTS.filter((p) => p.category === categoryId);
 
   async function handleFile(f: File | null) {
     if (!f) return;
@@ -139,7 +166,7 @@ export function RoomSimulator() {
           imageDataUrl: original,
           product: product.prompt,
           color: color.color,
-          ambient,
+          ambient: category.label,
         },
       });
       if (error) throw error;
@@ -338,77 +365,91 @@ export function RoomSimulator() {
           </div>
 
           {/* COLUNA DIREITA — controles */}
-          <div className="rounded-3xl border bg-card p-5 shadow-elegant">
+          <div className="rounded-3xl border bg-gradient-to-br from-card via-card to-muted/40 p-6 shadow-elegant ring-1 ring-primary/5">
+            {/* Passo 1 — Categoria */}
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">1 · Ambiente</div>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {AMBIENTS.map((a) => (
-                  <button
-                    key={a}
-                    type="button"
-                    onClick={() => setAmbient(a)}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                      ambient === a
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-background hover:border-primary"
-                    }`}
-                  >
-                    {a}
-                  </button>
-                ))}
+              <StepHeader n={1} title="Escolha o produto" />
+              <div className="relative mt-3">
+                <select
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                  className="w-full appearance-none rounded-xl border border-border bg-background px-4 py-3 pr-10 text-sm font-medium shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                >
+                  {CATEGORIES.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">▾</span>
               </div>
+              <p className="mt-1.5 text-xs text-muted-foreground">{category.hint}</p>
             </div>
 
-            <div className="mt-5">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">2 · Modelo</div>
-              <div className="mt-2 grid gap-2">
-                {PRODUCTS.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => {
-                      setProductId(p.id);
-                      setColorIdx(0);
-                    }}
-                    className={`flex items-center gap-3 rounded-2xl border p-2 text-left transition ${
-                      productId === p.id
-                        ? "border-primary bg-primary/5 shadow-sm"
-                        : "border-border bg-background hover:border-primary/60"
-                    }`}
-                  >
-                    <img src={p.thumbs[0].img} alt={p.name} className="h-14 w-14 shrink-0 rounded-xl object-cover" />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <div className="font-medium text-sm">{p.name}</div>
-                        {productId === p.id && <Check className="h-3.5 w-3.5 text-primary" />}
+            {/* Passo 2 — Tecido / Acabamento */}
+            <div className="mt-6">
+              <StepHeader n={2} title="Tecido / Acabamento" />
+              <div className="mt-3 grid grid-cols-3 gap-2.5">
+                {productsInCategory.map((p) => {
+                  const active = productId === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        setProductId(p.id);
+                        setColorIdx(0);
+                      }}
+                      className={`group relative overflow-hidden rounded-xl border-2 bg-background text-left transition ${
+                        active ? "border-primary shadow-glow" : "border-transparent hover:border-primary/40"
+                      }`}
+                    >
+                      <div className="relative aspect-[4/5] overflow-hidden">
+                        <img
+                          src={p.cover}
+                          alt={p.name}
+                          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                        />
+                        {active && (
+                          <div className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md">
+                            <Check className="h-3.5 w-3.5" />
+                          </div>
+                        )}
                       </div>
-                      <div className="text-[11px] text-muted-foreground line-clamp-2">{p.description}</div>
-                    </div>
-                  </button>
-                ))}
+                      <div className="px-2 py-2">
+                        <div className="line-clamp-1 text-[11px] font-semibold leading-tight">{p.name.replace("Persiana Rolô ", "")}</div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
+              <p className="mt-2 text-[11px] text-muted-foreground line-clamp-2">{product.description}</p>
             </div>
 
-            <div className="mt-5">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">3 · Cor</div>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {product.thumbs.map((t, i) => (
-                  <button
-                    key={t.color}
-                    type="button"
-                    onClick={() => setColorIdx(i)}
-                    title={t.color}
-                    className={`flex flex-col items-center gap-1 rounded-xl border p-1.5 transition ${
-                      colorIdx === i ? "border-primary" : "border-border hover:border-primary/60"
-                    }`}
-                  >
-                    <span
-                      className="h-7 w-7 rounded-full border border-black/10 shadow-inner"
-                      style={{ backgroundColor: t.hex }}
-                    />
-                    <span className="text-[10px] font-medium">{t.color}</span>
-                  </button>
-                ))}
+            {/* Passo 3 — Cor */}
+            <div className="mt-6">
+              <StepHeader n={3} title="Cor do tecido" />
+              <div className="mt-3 flex flex-wrap gap-2.5">
+                {product.thumbs.map((t, i) => {
+                  const active = colorIdx === i;
+                  return (
+                    <button
+                      key={t.color}
+                      type="button"
+                      onClick={() => setColorIdx(i)}
+                      title={t.color}
+                      className={`group flex flex-col items-center gap-1.5 rounded-xl p-1.5 transition ${
+                        active ? "bg-primary/10 ring-2 ring-primary" : "hover:bg-muted"
+                      }`}
+                    >
+                      <span
+                        className="h-9 w-9 rounded-full border border-black/10 shadow-md"
+                        style={{ backgroundColor: t.hex }}
+                      />
+                      <span className="text-[10px] font-medium">{t.color}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
