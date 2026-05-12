@@ -57,17 +57,17 @@ Regras obrigatórias:
       const txt = await resp.text();
       console.error("AI gateway error", resp.status, txt);
       if (resp.status === 429) {
-        return new Response(JSON.stringify({ error: "Muitas simulações em pouco tempo. Aguarde alguns segundos." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        return new Response(JSON.stringify({ error: "Muitas simulações em pouco tempo. Aguarde alguns segundos.", code: "rate_limited" }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (resp.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos de IA esgotados. Adicione créditos no workspace." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        return new Response(JSON.stringify({ error: "Créditos de IA esgotados. Adicione créditos em Settings → Cloud & AI balance.", code: "credits_exhausted" }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      return new Response(JSON.stringify({ error: "Falha ao gerar simulação" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ error: "Falha ao gerar simulação. Tente novamente.", code: "ai_error" }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -75,8 +75,8 @@ Regras obrigatórias:
     const url = data?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
     if (!url) {
       console.error("Sem imagem na resposta", JSON.stringify(data).slice(0, 500));
-      return new Response(JSON.stringify({ error: "A IA não retornou imagem. Tente outra foto." }), {
-        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ error: "A IA não retornou imagem. Tente outra foto.", code: "no_image" }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -85,8 +85,8 @@ Regras obrigatórias:
     });
   } catch (e) {
     console.error("simulate-room error", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido", code: "server_error" }), {
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
