@@ -50,12 +50,27 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
     // Carrega o pedido
     const { data: order, error: orderErr } = await supabaseAdmin
       .from("orders")
-      .select("id, total, customer_name, customer_email, customer_phone, order_number")
+      .select("id, total, customer_name, customer_email, customer_phone, order_number, asaas_payment_id, created_at")
       .eq("id", data.orderId)
       .maybeSingle();
     if (orderErr || !order) {
       console.error("Asaas: pedido não encontrado", orderErr);
       return { error: "Pedido não encontrado", success: false as const };
+    }
+
+    // Anti-abuse: o checkout é público (guest checkout), então protegemos a função
+    // contra dois vetores: (1) re-cobrança de pedido já cobrado e (2) abuso de
+    // pedidos antigos. Pedidos só podem gerar cobrança nas primeiras 2h após
+    // criação e apenas uma vez.
+    if (order.asaas_payment_id) {
+      return { success: false as const, error: "Este pedido já possui cobrança gerada." };
+    }
+    const ageMs = Date.now() - new Date(order.created_at as string).getTime();
+    if (ageMs > 2 * 60 * 60 * 1000) {
+      return { success: false as const, error: "Pedido expirado para pagamento. Refaça o checkout." };
+    }
+    if (Number(order.total) <= 0) {
+      return { success: false as const, error: "Valor inválido para cobrança." };
     }
 
     try {
