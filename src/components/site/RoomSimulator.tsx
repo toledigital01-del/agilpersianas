@@ -20,6 +20,8 @@ type Product = {
   prompt: string;
   thumbs: { color: string; img: string; hex: string }[];
   href: string;
+  cover: string;
+  category: string;
 };
 
 const PRODUCTS: Product[] = [
@@ -29,6 +31,8 @@ const PRODUCTS: Product[] = [
     description: "Bloqueio total da luz, textura sutil pinpoint. Ideal para quartos.",
     prompt: "persiana rolô blackout texturizada pinpoint, tecido opaco que bloqueia 100% da luz, rolada no topo da janela",
     href: "/rolo-blackout-pinpoint",
+    cover: pinpointCinza,
+    category: "rolo",
     thumbs: [
       { color: "Branca", img: pinpointBranca, hex: "#F5F1EA" },
       { color: "Bege", img: pinpointBege, hex: "#C9B89A" },
@@ -42,6 +46,8 @@ const PRODUCTS: Product[] = [
     description: "Textura linho premium com bloqueio total. Acabamento sofisticado.",
     prompt: "persiana rolô blackout texturizada estilo linho, tecido opaco com textura visível, rolo no topo da janela",
     href: "/rolo-blackout-texturizado",
+    cover: textBege,
+    category: "rolo",
     thumbs: [
       { color: "Branca", img: textBranca, hex: "#F5F1EA" },
       { color: "Bege rústico", img: textBege, hex: "#B8A07A" },
@@ -54,6 +60,8 @@ const PRODUCTS: Product[] = [
     description: "Filtra a luz e mantém a vista. Perfeito para sala e home office.",
     prompt: "persiana rolô tela solar screen, tecido translúcido cinza fino que filtra luz mas mantém visão da janela",
     href: "/persiana-solar-screen",
+    cover: liso,
+    category: "rolo",
     thumbs: [
       { color: "Branca", img: liso, hex: "#EFEFEF" },
       { color: "Cinza", img: textCinza, hex: "#7C7C7C" },
@@ -61,7 +69,9 @@ const PRODUCTS: Product[] = [
   },
 ];
 
-const AMBIENTS = ["Quarto", "Sala", "Cozinha", "Home office", "Outro"];
+const CATEGORIES: { id: string; label: string; hint: string }[] = [
+  { id: "rolo", label: "Persiana Rolô", hint: "Ambientes internos · sob medida" },
+];
 
 async function fileToDataUrl(file: File): Promise<string> {
   return new Promise((res, rej) => {
@@ -100,11 +110,13 @@ export function RoomSimulator() {
   const [loading, setLoading] = useState(false);
   const [productId, setProductId] = useState<string>(PRODUCTS[0].id);
   const [colorIdx, setColorIdx] = useState(0);
-  const [ambient, setAmbient] = useState(AMBIENTS[0]);
+  const [categoryId, setCategoryId] = useState<string>(CATEGORIES[0].id);
   const [compare, setCompare] = useState(50);
 
   const product = PRODUCTS.find((p) => p.id === productId)!;
   const color = product.thumbs[Math.min(colorIdx, product.thumbs.length - 1)];
+  const category = CATEGORIES.find((c) => c.id === categoryId) ?? CATEGORIES[0];
+  const productsInCategory = PRODUCTS.filter((p) => p.category === categoryId);
 
   async function handleFile(f: File | null) {
     if (!f) return;
@@ -139,7 +151,7 @@ export function RoomSimulator() {
           imageDataUrl: original,
           product: product.prompt,
           color: color.color,
-          ambient,
+          ambient: category.label,
         },
       });
       if (error) throw error;
