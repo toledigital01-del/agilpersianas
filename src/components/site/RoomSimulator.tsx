@@ -103,6 +103,21 @@ async function downscaleImage(dataUrl: string, maxSide = 1280): Promise<string> 
 }
 
 export function RoomSimulator() {
+  return <RoomSimulatorInner />;
+}
+
+function StepHeader({ n, title }: { n: number; title: string }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-xs font-bold text-primary-foreground shadow-md">
+        {n}
+      </span>
+      <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground/80">{title}</span>
+    </div>
+  );
+}
+
+function RoomSimulatorInner() {
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const [original, setOriginal] = useState<string | null>(null);
