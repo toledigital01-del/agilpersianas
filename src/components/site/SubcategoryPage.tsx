@@ -79,7 +79,7 @@ export function SubcategoryPage({
 
   const updateSearch = (patch: Partial<SubcategorySearch>) => {
     navigate({
-      search: (prev) => {
+      search: (prev: SubcategorySearch) => {
         const next: SubcategorySearch = { ...(prev as SubcategorySearch), ...patch };
         // Reset paginação ao trocar filtro
         if ("sort" in patch || "q" in patch || "tag" in patch) next.page = 1;
@@ -153,7 +153,7 @@ export function SubcategoryPage({
     if (!data) return;
     if (lastLoadedPage !== (search.page ?? 1)) {
       navigate({
-        search: (prev) => {
+        search: (prev: SubcategorySearch) => {
           const next = { ...(prev as SubcategorySearch) };
           if (lastLoadedPage <= 1) delete next.page;
           else next.page = lastLoadedPage;
