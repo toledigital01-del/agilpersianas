@@ -1,77 +1,39 @@
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Camera, Upload, Sparkles, Loader2, Download, RotateCcw, Check, ShoppingBag, MessageCircle } from "lucide-react";
-import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-import pinpointBege from "@/assets/products/rolo-pinpoint-bege.jpg";
-import pinpointBranca from "@/assets/products/rolo-pinpoint-branca.jpg";
-import pinpointCinza from "@/assets/products/rolo-pinpoint-cinza.jpg";
-import pinpointPreta from "@/assets/products/rolo-pinpoint-preta.jpg";
-import textBranca from "@/assets/products/rolo-texturizado-branca.jpg";
-import textBege from "@/assets/products/rolo-texturizado-bege-rustico.jpg";
-import textCinza from "@/assets/products/rolo-texturizado-cinza.jpg";
-import liso from "@/assets/products/rolo-tecido-liso-branca.jpg";
-
+type ColorOpt = { color: string; hex: string; img: string };
 type Product = {
   id: string;
   name: string;
   description: string;
   prompt: string;
-  thumbs: { color: string; img: string; hex: string }[];
+  thumbs: ColorOpt[];
   href: string;
   cover: string;
   category: string;
 };
+type CategoryOpt = { id: string; label: string; hint: string };
 
-const PRODUCTS: Product[] = [
-  {
-    id: "blackout-pinpoint",
-    name: "Persiana Rolô Blackout Pinpoint",
-    description: "Bloqueio total da luz, textura sutil pinpoint. Ideal para quartos.",
-    prompt: "persiana rolô blackout texturizada pinpoint, tecido opaco que bloqueia 100% da luz, rolada no topo da janela",
-    href: "/rolo-blackout-pinpoint",
-    cover: pinpointCinza,
-    category: "rolo",
-    thumbs: [
-      { color: "Branca", img: pinpointBranca, hex: "#F5F1EA" },
-      { color: "Bege", img: pinpointBege, hex: "#C9B89A" },
-      { color: "Cinza", img: pinpointCinza, hex: "#8A8A8A" },
-      { color: "Preta", img: pinpointPreta, hex: "#222" },
-    ],
-  },
-  {
-    id: "blackout-texturizado",
-    name: "Persiana Rolô Blackout Texturizado",
-    description: "Textura linho premium com bloqueio total. Acabamento sofisticado.",
-    prompt: "persiana rolô blackout texturizada estilo linho, tecido opaco com textura visível, rolo no topo da janela",
-    href: "/rolo-blackout-texturizado",
-    cover: textBege,
-    category: "rolo",
-    thumbs: [
-      { color: "Branca", img: textBranca, hex: "#F5F1EA" },
-      { color: "Bege rústico", img: textBege, hex: "#B8A07A" },
-      { color: "Cinza", img: textCinza, hex: "#7C7C7C" },
-    ],
-  },
-  {
-    id: "rolo-tela-solar",
-    name: "Persiana Rolô Tela Solar",
-    description: "Filtra a luz e mantém a vista. Perfeito para sala e home office.",
-    prompt: "persiana rolô tela solar screen, tecido translúcido cinza fino que filtra luz mas mantém visão da janela",
-    href: "/persiana-solar-screen",
-    cover: liso,
-    category: "rolo",
-    thumbs: [
-      { color: "Branca", img: liso, hex: "#EFEFEF" },
-      { color: "Cinza", img: textCinza, hex: "#7C7C7C" },
-    ],
-  },
-];
+const FALLBACK_HEX: Record<string, string> = {
+  branca: "#F5F1EA", branco: "#F5F1EA",
+  bege: "#C9B89A", "bege rústico": "#B8A07A", "bege rustico": "#B8A07A",
+  cinza: "#8A8A8A", preta: "#222222", preto: "#222222",
+  marrom: "#6B4A2B", azul: "#3B5BA9", verde: "#4F7A4A",
+};
+function guessHex(name: string): string {
+  const k = name.trim().toLowerCase();
+  return FALLBACK_HEX[k] ?? "#B8B8B8";
+}
 
-const CATEGORIES: { id: string; label: string; hint: string }[] = [
-  { id: "rolo", label: "Persiana Rolô", hint: "Ambientes internos · sob medida" },
-];
+function toTitle(s: string): string {
+  return s
+    .toLowerCase()
+    .split(/\s+/)
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+    .join(" ");
+}
 
 async function fileToDataUrl(file: File): Promise<string> {
   return new Promise((res, rej) => {
@@ -123,15 +85,125 @@ function RoomSimulatorInner() {
   const [original, setOriginal] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [productId, setProductId] = useState<string>(PRODUCTS[0].id);
-  const [colorIdx, setColorIdx] = useState(0);
-  const [categoryId, setCategoryId] = useState<string>(CATEGORIES[0].id);
   const [compare, setCompare] = useState(50);
 
-  const product = PRODUCTS.find((p) => p.id === productId)!;
-  const color = product.thumbs[Math.min(colorIdx, product.thumbs.length - 1)];
-  const category = CATEGORIES.find((c) => c.id === categoryId) ?? CATEGORIES[0];
-  const productsInCategory = PRODUCTS.filter((p) => p.category === categoryId);
+  const [catalog, setCatalog] = useState<{ categories: CategoryOpt[]; products: Product[] }>({
+    categories: [],
+    products: [],
+  });
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [productId, setProductId] = useState<string>("");
+  const [colorIdx, setColorIdx] = useState(0);
+  const [categoryId, setCategoryId] = useState<string>("");
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [{ data: cats }, { data: prods }, { data: links }] = await Promise.all([
+          supabase.from("categories").select("id, name, slug, parent_id, position, active").eq("active", true),
+          supabase
+            .from("products")
+            .select("id, name, slug, short_description, description, cover_image, colors, category_id, active")
+            .eq("active", true)
+            .order("name", { ascending: true }),
+          supabase.from("product_categories").select("product_id, category_id"),
+        ]);
+        if (cancelled) return;
+
+        const catById = new Map<string, { id: string; name: string; slug: string; parent_id: string | null; position: number }>();
+        (cats ?? []).forEach((c: any) => catById.set(c.id, c));
+        const rootOf = (id: string | null | undefined): { id: string; name: string; slug: string; position: number } | null => {
+          let cur = id ? catById.get(id) : null;
+          while (cur && cur.parent_id) cur = catById.get(cur.parent_id) ?? null;
+          return cur ? { id: cur.id, name: cur.name, slug: cur.slug, position: cur.position } : null;
+        };
+
+        // map product -> set of root categories
+        const productRoots = new Map<string, Set<string>>();
+        const addRoot = (pid: string, catId: string | null | undefined) => {
+          const r = rootOf(catId ?? null);
+          if (!r) return;
+          if (!productRoots.has(pid)) productRoots.set(pid, new Set());
+          productRoots.get(pid)!.add(r.id);
+        };
+        (prods ?? []).forEach((p: any) => addRoot(p.id, p.category_id));
+        (links ?? []).forEach((l: any) => addRoot(l.product_id, l.category_id));
+
+        const rootMap = new Map<string, CategoryOpt & { position: number }>();
+        const products: Product[] = [];
+
+        for (const p of prods ?? []) {
+          const roots = Array.from(productRoots.get(p.id) ?? []);
+          if (roots.length === 0) continue;
+          const cover = p.cover_image as string | null;
+          if (!cover) continue;
+          const colorsRaw: any[] = Array.isArray(p.colors) ? p.colors : [];
+          const thumbs: ColorOpt[] = colorsRaw
+            .filter((c) => c && (c.name || c.color))
+            .map((c: any) => ({
+              color: String(c.name ?? c.color),
+              hex: typeof c.hex === "string" && c.hex ? c.hex : guessHex(String(c.name ?? c.color)),
+              img: typeof c.img === "string" && c.img ? c.img : cover,
+            }));
+          if (thumbs.length === 0) {
+            // derive a single neutral color from the product name
+            const guessName = (p.name as string).split(" ").pop() ?? "Padrão";
+            thumbs.push({ color: guessName, hex: guessHex(guessName), img: cover });
+          }
+          // Use the first root category as primary grouping
+          const primaryRoot = catById.get(roots[0])!;
+          const rootInfo = rootOf(primaryRoot.id)!;
+          if (!rootMap.has(rootInfo.id)) {
+            rootMap.set(rootInfo.id, {
+              id: rootInfo.id,
+              label: toTitle(rootInfo.name),
+              hint: "Sob medida · instalação realista por IA",
+              position: rootInfo.position,
+            });
+          }
+          products.push({
+            id: p.id,
+            name: p.name,
+            description: p.short_description || (p.description ? String(p.description).slice(0, 140) : ""),
+            prompt: `${p.name}, instalada no topo da janela, tecido com caimento natural`,
+            href: `/produto/${p.slug}`,
+            cover,
+            category: rootInfo.id,
+            thumbs,
+          });
+        }
+
+        const categories = Array.from(rootMap.values())
+          .sort((a, b) => a.position - b.position)
+          .map(({ position: _p, ...rest }) => rest);
+
+        setCatalog({ categories, products });
+        setCategoryId(categories[0]?.id ?? "");
+        const firstProd = products.find((p) => p.category === (categories[0]?.id ?? ""));
+        setProductId(firstProd?.id ?? "");
+        setColorIdx(0);
+      } catch (e) {
+        console.error("simulator catalog load", e);
+      } finally {
+        if (!cancelled) setCatalogLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const productsInCategory = useMemo(
+    () => catalog.products.filter((p) => p.category === categoryId),
+    [catalog.products, categoryId],
+  );
+  const product = useMemo(
+    () => catalog.products.find((p) => p.id === productId) ?? productsInCategory[0],
+    [catalog.products, productId, productsInCategory],
+  );
+  const color = product?.thumbs[Math.min(colorIdx, (product?.thumbs.length ?? 1) - 1)];
+  const category = catalog.categories.find((c) => c.id === categoryId);
 
   async function handleFile(f: File | null) {
     if (!f) return;
@@ -158,6 +230,10 @@ function RoomSimulatorInner() {
       toast.error("Envie a foto da sua janela primeiro.");
       return;
     }
+    if (!product || !color) {
+      toast.error("Escolha o produto e a cor.");
+      return;
+    }
     setLoading(true);
     setResult(null);
     try {
@@ -166,7 +242,7 @@ function RoomSimulatorInner() {
           imageDataUrl: original,
           product: product.prompt,
           color: color.color,
-          ambient: category.label,
+          ambient: category?.label,
         },
       });
       if (error) throw error;
@@ -200,12 +276,12 @@ function RoomSimulatorInner() {
     if (!result) return;
     const a = document.createElement("a");
     a.href = result;
-    a.download = `agil-simulacao-${product.id}.png`;
+    a.download = `agil-simulacao-${product?.id ?? "persiana"}.png`;
     a.click();
   }
 
   const whatsappMsg = encodeURIComponent(
-    `Olá! Acabei de simular a ${product.name} (cor ${color.color}) no meu ambiente pelo site da Ágil Persianas e gostaria de um orçamento.`,
+    `Olá! Acabei de simular a ${product?.name ?? "persiana"} (cor ${color?.color ?? ""}) no meu ambiente pelo site da Ágil Persianas e gostaria de um orçamento.`,
   );
 
   return (
@@ -375,7 +451,7 @@ function RoomSimulatorInner() {
                   onChange={(e) => setCategoryId(e.target.value)}
                   className="w-full appearance-none rounded-xl border border-border bg-background px-4 py-3 pr-10 text-sm font-medium shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                 >
-                  {CATEGORIES.map((c) => (
+                {catalog.categories.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.label}
                     </option>
@@ -383,13 +459,20 @@ function RoomSimulatorInner() {
                 </select>
                 <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">▾</span>
               </div>
-              <p className="mt-1.5 text-xs text-muted-foreground">{category.hint}</p>
+              <p className="mt-1.5 text-xs text-muted-foreground">{category?.hint ?? (catalogLoading ? "Carregando catálogo…" : "Nenhum produto disponível")}</p>
             </div>
 
             {/* Passo 2 — Tecido / Acabamento */}
             <div className="mt-6">
               <StepHeader n={2} title="Tecido / Acabamento" />
               <div className="mt-3 grid grid-cols-3 gap-2.5">
+                {catalogLoading && productsInCategory.length === 0 &&
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="aspect-[4/5] animate-pulse rounded-xl bg-muted" />
+                  ))}
+                {!catalogLoading && productsInCategory.length === 0 && (
+                  <p className="col-span-3 text-xs text-muted-foreground">Nenhum produto cadastrado nesta categoria.</p>
+                )}
                 {productsInCategory.map((p) => {
                   const active = productId === p.id;
                   return (
@@ -417,20 +500,22 @@ function RoomSimulatorInner() {
                         )}
                       </div>
                       <div className="px-2 py-2">
-                        <div className="line-clamp-1 text-[11px] font-semibold leading-tight">{p.name.replace("Persiana Rolô ", "")}</div>
+                        <div className="line-clamp-2 text-[11px] font-semibold leading-tight">{p.name}</div>
                       </div>
                     </button>
                   );
                 })}
               </div>
-              <p className="mt-2 text-[11px] text-muted-foreground line-clamp-2">{product.description}</p>
+              {product?.description && (
+                <p className="mt-2 text-[11px] text-muted-foreground line-clamp-2">{product.description}</p>
+              )}
             </div>
 
             {/* Passo 3 — Cor */}
             <div className="mt-6">
               <StepHeader n={3} title="Cor do tecido" />
               <div className="mt-3 flex flex-wrap gap-2.5">
-                {product.thumbs.map((t, i) => {
+                {product?.thumbs.map((t, i) => {
                   const active = colorIdx === i;
                   return (
                     <button
@@ -471,14 +556,14 @@ function RoomSimulatorInner() {
               )}
             </button>
 
-            {result && (
+            {result && product && (
               <div className="mt-5 grid gap-2 sm:grid-cols-2">
-                <Link
-                  to={product.href}
+                <a
+                  href={product.href}
                   className="inline-flex items-center justify-center gap-1.5 rounded-full bg-foreground px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-background transition hover:opacity-90"
                 >
                   <ShoppingBag className="h-3.5 w-3.5" /> Ver e comprar
-                </Link>
+                </a>
                 <a
                   href={`https://wa.me/5532991668800?text=${whatsappMsg}`}
                   target="_blank"
