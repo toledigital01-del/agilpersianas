@@ -467,6 +467,13 @@ function RoomSimulatorInner() {
             <div className="mt-6">
               <StepHeader n={2} title="Tecido / Acabamento" />
               <div className="mt-3 grid grid-cols-3 gap-2.5">
+                {catalogLoading && productsInCategory.length === 0 &&
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="aspect-[4/5] animate-pulse rounded-xl bg-muted" />
+                  ))}
+                {!catalogLoading && productsInCategory.length === 0 && (
+                  <p className="col-span-3 text-xs text-muted-foreground">Nenhum produto cadastrado nesta categoria.</p>
+                )}
                 {productsInCategory.map((p) => {
                   const active = productId === p.id;
                   return (
@@ -494,20 +501,22 @@ function RoomSimulatorInner() {
                         )}
                       </div>
                       <div className="px-2 py-2">
-                        <div className="line-clamp-1 text-[11px] font-semibold leading-tight">{p.name.replace("Persiana Rolô ", "")}</div>
+                        <div className="line-clamp-2 text-[11px] font-semibold leading-tight">{p.name}</div>
                       </div>
                     </button>
                   );
                 })}
               </div>
-              <p className="mt-2 text-[11px] text-muted-foreground line-clamp-2">{product.description}</p>
+              {product?.description && (
+                <p className="mt-2 text-[11px] text-muted-foreground line-clamp-2">{product.description}</p>
+              )}
             </div>
 
             {/* Passo 3 — Cor */}
             <div className="mt-6">
               <StepHeader n={3} title="Cor do tecido" />
               <div className="mt-3 flex flex-wrap gap-2.5">
-                {product.thumbs.map((t, i) => {
+                {product?.thumbs.map((t, i) => {
                   const active = colorIdx === i;
                   return (
                     <button
