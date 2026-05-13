@@ -28,6 +28,14 @@ function guessHex(name: string): string {
   return FALLBACK_HEX[k] ?? "#B8B8B8";
 }
 
+function toTitle(s: string): string {
+  return s
+    .toLowerCase()
+    .split(/\s+/)
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+    .join(" ");
+}
+
 async function fileToDataUrl(file: File): Promise<string> {
   return new Promise((res, rej) => {
     const r = new FileReader();
@@ -97,9 +105,9 @@ function RoomSimulatorInner() {
           supabase.from("categories").select("id, name, slug, parent_id, position, active").eq("active", true),
           supabase
             .from("products")
-            .select("id, name, slug, short_description, description, cover_image, colors, category_id, position, active")
+            .select("id, name, slug, short_description, description, cover_image, colors, category_id, active")
             .eq("active", true)
-            .order("position", { ascending: true }),
+            .order("name", { ascending: true }),
           supabase.from("product_categories").select("product_id, category_id"),
         ]);
         if (cancelled) return;
@@ -444,7 +452,7 @@ function RoomSimulatorInner() {
                   onChange={(e) => setCategoryId(e.target.value)}
                   className="w-full appearance-none rounded-xl border border-border bg-background px-4 py-3 pr-10 text-sm font-medium shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                 >
-                  {CATEGORIES.map((c) => (
+                {catalog.categories.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.label}
                     </option>
@@ -452,7 +460,7 @@ function RoomSimulatorInner() {
                 </select>
                 <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">▾</span>
               </div>
-              <p className="mt-1.5 text-xs text-muted-foreground">{category.hint}</p>
+              <p className="mt-1.5 text-xs text-muted-foreground">{category?.hint ?? (catalogLoading ? "Carregando catálogo…" : "Nenhum produto disponível")}</p>
             </div>
 
             {/* Passo 2 — Tecido / Acabamento */}
