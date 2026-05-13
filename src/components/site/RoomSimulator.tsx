@@ -557,14 +557,14 @@ function RoomSimulatorInner() {
               )}
             </button>
 
-            {result && (
+            {result && product && (
               <div className="mt-5 grid gap-2 sm:grid-cols-2">
-                <Link
-                  to={product.href}
+                <a
+                  href={product.href}
                   className="inline-flex items-center justify-center gap-1.5 rounded-full bg-foreground px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-background transition hover:opacity-90"
                 >
                   <ShoppingBag className="h-3.5 w-3.5" /> Ver e comprar
-                </Link>
+                </a>
                 <a
                   href={`https://wa.me/5532991668800?text=${whatsappMsg}`}
                   target="_blank"
