@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Star, Truck, Ruler, MessageCircle, ChevronRight, Info, Wrench, Sparkles } from "lucide-react";
+import { Star, Truck, Ruler, MessageCircle, ChevronRight, Wrench, Sparkles, ShieldCheck } from "lucide-react";
 import type { Product } from "@/routes/produto.$slug";
 import { toast } from "sonner";
 import { CheckoutDialog } from "./CheckoutDialog";
@@ -17,11 +17,15 @@ import { ShippingCalculator } from "./ShippingCalculator";
 import type { ShippingQuote } from "@/lib/frenet.functions";
 import { loadSelection, saveSelection } from "@/lib/product-selection";
 import { openLumiWith } from "@/components/site/LumiWidget";
+import { HowToMeasureDialog } from "./HowToMeasureDialog";
+import {
+  CordLeft, CordRight, NoBando, WithBando,
+  HandManual, MotorRf, MotorWifi, MountInside, MountOutside,
+} from "./BlindIcons";
 
 const BRL = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-// Gera lista de opções em cm, com label "0,30 (30 cm)"
 function buildMeasureOptions(minCm: number, maxCm: number) {
   const opts: { cm: number; label: string }[] = [];
   for (let cm = minCm; cm <= maxCm; cm++) {
@@ -35,6 +39,9 @@ type Motor = "manual" | "rf" | "wifi";
 type Mount = "inside" | "outside";
 type Side = "left" | "right";
 
+type IconType = React.ComponentType<React.SVGProps<SVGSVGElement>>;
+type IconOption = { v: string; l: string; sub?: string; price?: number; Icon: IconType };
+
 export function BuyBox({
   product,
   onColorChange,
@@ -42,7 +49,6 @@ export function BuyBox({
   product: Product;
   onColorChange?: (color: string) => void;
 }) {
-  // Restaurar seleção persistida (sessionStorage por slug)
   const initial = useMemo(() => loadSelection(product.slug), [product.slug]);
 
   const [width, setWidth] = useState(initial.widthCm ?? product.min_width_cm);
@@ -53,31 +59,29 @@ export function BuyBox({
   const [bando, setBando] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [shipping, setShipping] = useState<ShippingQuote | null>(null);
-  // Garante cores padrão caso o produto não tenha cores cadastradas
+
   const productColors = useMemo(() => {
     if (Array.isArray(product.colors) && product.colors.length > 0) {
       return product.colors.filter((c) => c && c.name && c.hex);
     }
     return [
-      { name: "Branco", hex: "#FFFFFF" },
-      { name: "Bege", hex: "#D7C4A3" },
-      { name: "Cinza", hex: "#7E8794" },
-      { name: "Grafite", hex: "#3A3A3A" },
+      { name: "Branca", hex: "#F4F2EC" },
+      { name: "Bege", hex: "#E5DDCC" },
+      { name: "Cinza", hex: "#BFC0BE" },
+      { name: "Preta", hex: "#2A2D31" },
     ];
   }, [product.colors]);
   const [color, setColor] = useState(
     initial.color && productColors.some((c) => c.name === initial.color)
       ? initial.color
-      : (productColors[0]?.name ?? "Branco"),
+      : (productColors[0]?.name ?? "Branca"),
   );
 
-  // Notifica o pai (página do produto) para sincronizar a galeria + persiste.
   useEffect(() => {
     onColorChange?.(color);
     saveSelection(product.slug, { color });
   }, [color, onColorChange, product.slug]);
 
-  // Persiste medidas
   useEffect(() => {
     saveSelection(product.slug, { widthCm: width, heightCm: height });
   }, [width, height, product.slug]);
@@ -188,37 +192,75 @@ export function BuyBox({
         </div>
       </div>
 
-      {/* Configurador estilo Blinds.com — etapas numeradas */}
-      <div className="space-y-6">
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                1
-              </span>
-              <h3 className="font-display text-lg">Medidas</h3>
-            </div>
-            <a href="#como-medir" className="text-xs text-primary inline-flex items-center gap-1 hover:underline">
-              <Info className="h-3.5 w-3.5" /> Como medir
-            </a>
+      {/* COLOR — moved up right under the price (premium) */}
+      <div className="rounded-2xl border bg-card p-5 shadow-card">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <div className="text-xs uppercase tracking-widest text-muted-foreground">Cor selecionada</div>
+            <div className="font-display text-xl mt-0.5">{color}</div>
           </div>
+          <Badge variant="secondary" className="bg-sand text-graphite text-[10px] uppercase tracking-widest">
+            {productColors.length} opções
+          </Badge>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          {productColors.map((c) => {
+            const active = color === c.name;
+            return (
+              <button
+                key={c.name}
+                type="button"
+                onClick={() => setColor(c.name)}
+                title={c.name}
+                aria-label={c.name}
+                className="group flex flex-col items-center gap-1.5"
+              >
+                <span
+                  className={`relative h-12 w-12 rounded-full transition-all ${
+                    active
+                      ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-105 shadow-md"
+                      : "ring-1 ring-border group-hover:ring-foreground/40 group-hover:scale-105"
+                  }`}
+                  style={{ backgroundColor: c.hex, boxShadow: active ? "inset 0 0 0 2px rgba(255,255,255,.6)" : undefined }}
+                />
+                <span className={`text-[11px] font-medium ${active ? "text-primary" : "text-muted-foreground"}`}>
+                  {c.name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mt-4">
+          <HowToMeasureDialog />
+        </div>
+      </div>
+
+      {/* Configurador — etapas numeradas */}
+      <div className="space-y-5">
+        <div>
+          <StepHeader n={1} title="Medidas" right={
+            <HowToMeasureDialog
+              trigger={
+                <button type="button" className="text-xs text-primary inline-flex items-center gap-1 hover:underline">
+                  <Ruler className="h-3.5 w-3.5" /> Como medir
+                </button>
+              }
+            />
+          } />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label className="text-xs uppercase tracking-wide text-muted-foreground">
                 Largura da Persiana
               </Label>
-              <Select
-                value={String(width)}
-                onValueChange={(v) => setWidth(Number(v))}
-              >
+              <Select value={String(width)} onValueChange={(v) => setWidth(Number(v))}>
                 <SelectTrigger className="h-12 text-base font-medium mt-1">
                   <SelectValue placeholder="Selecione a opção" />
                 </SelectTrigger>
                 <SelectContent className="max-h-72">
                   {widthOptions.map((o) => (
-                    <SelectItem key={o.cm} value={String(o.cm)}>
-                      {o.label}
-                    </SelectItem>
+                    <SelectItem key={o.cm} value={String(o.cm)}>{o.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -227,18 +269,13 @@ export function BuyBox({
               <Label className="text-xs uppercase tracking-wide text-muted-foreground">
                 Altura da Persiana
               </Label>
-              <Select
-                value={String(height)}
-                onValueChange={(v) => setHeight(Number(v))}
-              >
+              <Select value={String(height)} onValueChange={(v) => setHeight(Number(v))}>
                 <SelectTrigger className="h-12 text-base font-medium mt-1">
                   <SelectValue placeholder="Selecione a opção" />
                 </SelectTrigger>
                 <SelectContent className="max-h-72">
                   {heightOptions.map((o) => (
-                    <SelectItem key={o.cm} value={String(o.cm)}>
-                      {o.label}
-                    </SelectItem>
+                    <SelectItem key={o.cm} value={String(o.cm)}>{o.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -254,87 +291,51 @@ export function BuyBox({
           )}
         </div>
 
-        <OptionGroup
+        <IconOptionGroup
           step={2}
           label="Tipo de instalação"
           value={mount}
           onChange={(v) => setMount(v as Mount)}
           options={[
-            { v: "inside", l: "Dentro do vão" },
-            { v: "outside", l: "Fora do vão" },
+            { v: "inside", l: "Dentro do vão", sub: "Visual mais clean", Icon: MountInside },
+            { v: "outside", l: "Fora do vão", sub: "Cobre toda a janela", Icon: MountOutside },
           ]}
         />
 
-        <OptionGroup
+        <IconOptionGroup
           step={3}
-          label="Lado do comando"
+          label="Lado da Cordinha"
           value={side}
           onChange={(v) => setSide(v as Side)}
           options={[
-            { v: "left", l: "Esquerda" },
-            { v: "right", l: "Direita" },
+            { v: "left", l: "Esquerda", Icon: CordLeft },
+            { v: "right", l: "Direita", Icon: CordRight },
           ]}
         />
 
-        <OptionGroup
+        <IconOptionGroup
           step={4}
+          label="Acabamentos"
+          value={bando ? "with" : "no"}
+          onChange={(v) => setBando(v === "with")}
+          options={[
+            { v: "no", l: "Sem Bandô", Icon: NoBando },
+            { v: "with", l: "Com Bandô", price: product.bando_price, Icon: WithBando },
+          ]}
+        />
+
+        <IconOptionGroup
+          step={5}
           label="Acionamento"
           value={motor}
           onChange={(v) => setMotor(v as Motor)}
+          columns={3}
           options={[
-            { v: "manual", l: "Manual", price: product.motor_manual_price },
-            { v: "rf", l: "Motor RF", price: product.motor_rf_price },
-            { v: "wifi", l: "Motor Wi-Fi", price: product.motor_wifi_price },
+            { v: "manual", l: "Manual", sub: "Cordinha", Icon: HandManual },
+            { v: "rf", l: "Motor + Controle", sub: "Motorizado FR", price: product.motor_rf_price, Icon: MotorRf },
+            { v: "wifi", l: "Motor + Controle", sub: "Motorizado Wi-Fi", price: product.motor_wifi_price, Icon: MotorWifi },
           ]}
         />
-
-        <div>
-          <div className="flex items-center gap-2.5 mb-3">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
-              5
-            </span>
-            <h3 className="font-display text-lg">
-              Cor: <span className="text-muted-foreground text-base font-normal">{color}</span>
-            </h3>
-          </div>
-          <div className="flex gap-2.5 flex-wrap">
-            {productColors.map((c) => (
-              <button
-                key={c.name}
-                type="button"
-                onClick={() => setColor(c.name)}
-                className={`h-11 w-11 rounded-full border-2 transition ${
-                  color === c.name ? "border-primary scale-110 shadow-md" : "border-border hover:border-foreground/40"
-                }`}
-                style={{ backgroundColor: c.hex }}
-                title={c.name}
-                aria-label={c.name}
-              />
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <div className="flex items-center gap-2.5 mb-3">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
-              6
-            </span>
-            <h3 className="font-display text-lg">Acabamento</h3>
-          </div>
-          <button
-            type="button"
-            onClick={() => setBando(!bando)}
-            className={`w-full text-left p-4 rounded-xl border-2 transition ${
-              bando ? "border-primary bg-primary/5" : "border-border hover:border-foreground/30"
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-medium">{bando ? "✓ Com bandô" : "Adicionar bandô"}</span>
-              <span className="text-sm text-muted-foreground">+ {BRL(product.bando_price)}</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Acabamento elegante que esconde o mecanismo.</p>
-          </button>
-        </div>
       </div>
 
       {/* Frete */}
@@ -391,18 +392,22 @@ export function BuyBox({
       </div>
 
       {/* Mini trust */}
-      <div className="grid grid-cols-3 gap-3 pt-2 text-center text-xs">
-        <div>
-          <Ruler className="h-5 w-5 mx-auto text-primary mb-1" />
+      <div className="grid grid-cols-4 gap-2 pt-2 text-center text-[11px]">
+        <div className="rounded-lg border bg-card p-2">
+          <Ruler className="h-4 w-4 mx-auto text-primary mb-1" />
           Sob medida
         </div>
-        <div>
-          <Truck className="h-5 w-5 mx-auto text-primary mb-1" />
-          Entrega Brasil
+        <div className="rounded-lg border bg-card p-2">
+          <Truck className="h-4 w-4 mx-auto text-primary mb-1" />
+          Brasil todo
         </div>
-        <div>
-          <Wrench className="h-5 w-5 mx-auto text-primary mb-1" />
-          Instalação simples
+        <div className="rounded-lg border bg-card p-2">
+          <Wrench className="h-4 w-4 mx-auto text-primary mb-1" />
+          Fácil instalar
+        </div>
+        <div className="rounded-lg border bg-card p-2">
+          <ShieldCheck className="h-4 w-4 mx-auto text-primary mb-1" />
+          Compra segura
         </div>
       </div>
 
@@ -427,47 +432,69 @@ export function BuyBox({
   );
 }
 
-function OptionGroup({
+function StepHeader({ n, title, right }: { n: number; title: string; right?: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs font-bold shadow-sm">
+          {n}
+        </span>
+        <h3 className="font-display text-lg">{title}</h3>
+      </div>
+      {right}
+    </div>
+  );
+}
+
+function IconOptionGroup({
   step,
   label,
   value,
   onChange,
   options,
+  columns = 2,
 }: {
-  step?: number;
+  step: number;
   label: string;
   value: string;
   onChange: (v: string) => void;
-  options: { v: string; l: string; price?: number }[];
+  options: IconOption[];
+  columns?: 2 | 3;
 }) {
   return (
     <div>
-      {step ? (
-        <div className="flex items-center gap-2.5 mb-3">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
-            {step}
-          </span>
-          <h3 className="font-display text-lg">{label}</h3>
-        </div>
-      ) : (
-        <Label className="text-xs uppercase tracking-wide text-muted-foreground mb-2 block">{label}</Label>
-      )}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        {options.map((o) => (
-          <button
-            key={o.v}
-            type="button"
-            onClick={() => onChange(o.v)}
-            className={`px-4 py-3 rounded-xl border-2 text-sm font-medium transition text-left ${
-              value === o.v ? "border-primary bg-primary/5" : "border-border hover:border-foreground/30"
-            }`}
-          >
-            <div>{o.l}</div>
-            {typeof o.price === "number" && o.price > 0 && (
-              <div className="text-[10px] text-muted-foreground mt-0.5">+ {BRL(o.price)}</div>
-            )}
-          </button>
-        ))}
+      <StepHeader n={step} title={label} />
+      <div className={`grid gap-2.5 ${columns === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
+        {options.map((o) => {
+          const active = value === o.v;
+          const Icon = o.Icon;
+          return (
+            <button
+              key={o.v}
+              type="button"
+              onClick={() => onChange(o.v)}
+              className={`group relative flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 text-center transition-all ${
+                active
+                  ? "border-primary bg-gradient-to-br from-primary/10 to-primary/[0.03] shadow-md"
+                  : "border-border hover:border-foreground/30 hover:bg-sand/30"
+              }`}
+            >
+              <Icon className={`h-9 w-9 ${active ? "text-primary" : "text-foreground/70 group-hover:text-foreground"}`} />
+              <div className={`text-sm font-semibold leading-tight ${active ? "text-foreground" : "text-foreground/85"}`}>
+                {o.l}
+              </div>
+              {o.sub && <div className="text-[10px] text-muted-foreground -mt-0.5">{o.sub}</div>}
+              {typeof o.price === "number" && o.price > 0 && (
+                <div className="text-[10px] font-semibold text-primary">+ {BRL(o.price)}</div>
+              )}
+              {active && (
+                <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow">
+                  ✓
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
