@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Camera, Upload, Sparkles, Loader2, Download, RotateCcw, Check, ShoppingBag, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { paletteFor, type FabricColor } from "@/lib/fabric-palettes";
 
-type ColorOpt = { color: string; hex: string; img: string };
+type ColorOpt = { color: string; hex: string; img: string; swatch?: string };
 type Product = {
   id: string;
   name: string;
@@ -139,7 +140,16 @@ function RoomSimulatorInner() {
           const cover = p.cover_image as string | null;
           if (!cover) continue;
           const colorsRaw: any[] = Array.isArray(p.colors) ? p.colors : [];
-          const thumbs: ColorOpt[] = colorsRaw
+          // 1) Paleta curada por modelo (texturizado, pinpoint, tela solar, vedação)
+          const curated = paletteFor(p.name as string, (p.short_description as string) ?? "");
+          let thumbs: ColorOpt[] = curated
+            ? curated.map((c: FabricColor) => ({
+                color: c.name,
+                hex: c.hex,
+                img: cover,
+                swatch: c.swatch,
+              }))
+            : colorsRaw
             .filter((c) => c && (c.name || c.color))
             .map((c: any) => ({
               color: String(c.name ?? c.color),
