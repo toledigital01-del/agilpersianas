@@ -563,8 +563,16 @@ function RoomSimulatorInner() {
 
             {/* Passo 3 — Cor */}
             <div className="mt-6">
-              <StepHeader n={3} title="Cor do tecido" />
-              <div className="mt-3 flex flex-wrap gap-2.5">
+              <div className="flex items-center justify-between gap-3">
+                <StepHeader n={3} title="Cor do tecido" />
+                {color && (
+                  <span className="text-[11px] font-medium text-muted-foreground">
+                    Selecionado:{" "}
+                    <span className="font-bold text-foreground">{color.color}</span>
+                  </span>
+                )}
+              </div>
+              <div className="mt-3 grid grid-cols-5 gap-2 sm:gap-2.5">
                 {product?.thumbs.map((t, i) => {
                   const active = colorIdx === i;
                   return (
@@ -573,19 +581,38 @@ function RoomSimulatorInner() {
                       type="button"
                       onClick={() => setColorIdx(i)}
                       title={t.color}
-                      className={`group flex flex-col items-center gap-1.5 rounded-xl p-1.5 transition ${
-                        active ? "bg-primary/10 ring-2 ring-primary" : "hover:bg-muted"
+                      className={`group relative flex flex-col items-center gap-1.5 rounded-xl p-1.5 transition ${
+                        active ? "bg-primary/10 ring-2 ring-primary" : "hover:bg-muted/70"
                       }`}
                     >
                       <span
-                        className="h-9 w-9 rounded-full border border-black/10 shadow-md"
+                        className="relative block h-12 w-12 overflow-hidden rounded-full border border-black/10 shadow-md ring-1 ring-white/40 sm:h-14 sm:w-14"
                         style={{ backgroundColor: t.hex }}
-                      />
-                      <span className="text-[10px] font-medium">{t.color}</span>
+                      >
+                        {t.swatch && (
+                          <img
+                            src={t.swatch}
+                            alt=""
+                            aria-hidden
+                            className="absolute inset-0 h-full w-full object-cover"
+                          />
+                        )}
+                        {active && (
+                          <span className="absolute inset-0 flex items-center justify-center bg-black/30">
+                            <Check className="h-5 w-5 text-white drop-shadow" />
+                          </span>
+                        )}
+                      </span>
+                      <span className="line-clamp-1 text-[10px] font-semibold leading-tight text-foreground/80">
+                        {t.color}
+                      </span>
                     </button>
                   );
                 })}
               </div>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Toque em uma cor — a persiana é repintada na sua janela em segundos.
+              </p>
             </div>
 
             <button
