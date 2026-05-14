@@ -215,6 +215,46 @@ function RoomSimulatorInner() {
   const color = product?.thumbs[Math.min(colorIdx, (product?.thumbs.length ?? 1) - 1)];
   const category = catalog.categories.find((c) => c.id === categoryId);
 
+  // Auto-regenera quando o cliente troca a cor após já existir uma simulação.
+  // Mantém apenas a última requisição válida.
+  const lastReqRef = useRef(0);
+  useEffect(() => {
+    if (!result || !original || !product || !color) return;
+    const reqId = ++lastReqRef.current;
+    const t = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke("simulate-room", {
+          body: {
+            imageDataUrl: original,
+            product: product.prompt,
+            color: color.color,
+            ambient: category?.label,
+          },
+        });
+        if (reqId !== lastReqRef.current) return;
+        if (error) throw error;
+        const errMsg = (data as { error?: string })?.error;
+        if (errMsg) {
+          toast.error(errMsg);
+          return;
+        }
+        const url = (data as { imageUrl?: string })?.imageUrl;
+        if (url) {
+          setResult(url);
+          setCompare(50);
+        }
+      } catch (e) {
+        if (reqId !== lastReqRef.current) return;
+        console.error(e);
+      } finally {
+        if (reqId === lastReqRef.current) setLoading(false);
+      }
+    }, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [colorIdx, productId]);
+
   async function handleFile(f: File | null) {
     if (!f) return;
     if (!f.type.startsWith("image/")) {
