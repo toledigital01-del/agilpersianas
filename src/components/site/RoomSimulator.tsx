@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Camera, Upload, Sparkles, Loader2, Download, RotateCcw, Check, ShoppingBag, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { paletteFor, type FabricColor } from "@/lib/fabric-palettes";
 
-type ColorOpt = { color: string; hex: string; img: string };
+type ColorOpt = { color: string; hex: string; img: string; swatch?: string };
 type Product = {
   id: string;
   name: string;
@@ -139,7 +140,16 @@ function RoomSimulatorInner() {
           const cover = p.cover_image as string | null;
           if (!cover) continue;
           const colorsRaw: any[] = Array.isArray(p.colors) ? p.colors : [];
-          const thumbs: ColorOpt[] = colorsRaw
+          // 1) Paleta curada por modelo (texturizado, pinpoint, tela solar, vedação)
+          const curated = paletteFor(p.name as string, (p.short_description as string) ?? "");
+          let thumbs: ColorOpt[] = curated
+            ? curated.map((c: FabricColor) => ({
+                color: c.name,
+                hex: c.hex,
+                img: cover,
+                swatch: c.swatch,
+              }))
+            : colorsRaw
             .filter((c) => c && (c.name || c.color))
             .map((c: any) => ({
               color: String(c.name ?? c.color),
@@ -204,6 +214,46 @@ function RoomSimulatorInner() {
   );
   const color = product?.thumbs[Math.min(colorIdx, (product?.thumbs.length ?? 1) - 1)];
   const category = catalog.categories.find((c) => c.id === categoryId);
+
+  // Auto-regenera quando o cliente troca a cor após já existir uma simulação.
+  // Mantém apenas a última requisição válida.
+  const lastReqRef = useRef(0);
+  useEffect(() => {
+    if (!result || !original || !product || !color) return;
+    const reqId = ++lastReqRef.current;
+    const t = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke("simulate-room", {
+          body: {
+            imageDataUrl: original,
+            product: product.prompt,
+            color: color.color,
+            ambient: category?.label,
+          },
+        });
+        if (reqId !== lastReqRef.current) return;
+        if (error) throw error;
+        const errMsg = (data as { error?: string })?.error;
+        if (errMsg) {
+          toast.error(errMsg);
+          return;
+        }
+        const url = (data as { imageUrl?: string })?.imageUrl;
+        if (url) {
+          setResult(url);
+          setCompare(50);
+        }
+      } catch (e) {
+        if (reqId !== lastReqRef.current) return;
+        console.error(e);
+      } finally {
+        if (reqId === lastReqRef.current) setLoading(false);
+      }
+    }, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [colorIdx, productId]);
 
   async function handleFile(f: File | null) {
     if (!f) return;
@@ -513,8 +563,16 @@ function RoomSimulatorInner() {
 
             {/* Passo 3 — Cor */}
             <div className="mt-6">
-              <StepHeader n={3} title="Cor do tecido" />
-              <div className="mt-3 flex flex-wrap gap-2.5">
+              <div className="flex items-center justify-between gap-3">
+                <StepHeader n={3} title="Cor do tecido" />
+                {color && (
+                  <span className="text-[11px] font-medium text-muted-foreground">
+                    Selecionado:{" "}
+                    <span className="font-bold text-foreground">{color.color}</span>
+                  </span>
+                )}
+              </div>
+              <div className="mt-3 grid grid-cols-5 gap-2 sm:gap-2.5">
                 {product?.thumbs.map((t, i) => {
                   const active = colorIdx === i;
                   return (
@@ -523,19 +581,38 @@ function RoomSimulatorInner() {
                       type="button"
                       onClick={() => setColorIdx(i)}
                       title={t.color}
-                      className={`group flex flex-col items-center gap-1.5 rounded-xl p-1.5 transition ${
-                        active ? "bg-primary/10 ring-2 ring-primary" : "hover:bg-muted"
+                      className={`group relative flex flex-col items-center gap-1.5 rounded-xl p-1.5 transition ${
+                        active ? "bg-primary/10 ring-2 ring-primary" : "hover:bg-muted/70"
                       }`}
                     >
                       <span
-                        className="h-9 w-9 rounded-full border border-black/10 shadow-md"
+                        className="relative block h-12 w-12 overflow-hidden rounded-full border border-black/10 shadow-md ring-1 ring-white/40 sm:h-14 sm:w-14"
                         style={{ backgroundColor: t.hex }}
-                      />
-                      <span className="text-[10px] font-medium">{t.color}</span>
+                      >
+                        {t.swatch && (
+                          <img
+                            src={t.swatch}
+                            alt=""
+                            aria-hidden
+                            className="absolute inset-0 h-full w-full object-cover"
+                          />
+                        )}
+                        {active && (
+                          <span className="absolute inset-0 flex items-center justify-center bg-black/30">
+                            <Check className="h-5 w-5 text-white drop-shadow" />
+                          </span>
+                        )}
+                      </span>
+                      <span className="line-clamp-1 text-[10px] font-semibold leading-tight text-foreground/80">
+                        {t.color}
+                      </span>
                     </button>
                   );
                 })}
               </div>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Toque em uma cor — a persiana é repintada na sua janela em segundos.
+              </p>
             </div>
 
             <button

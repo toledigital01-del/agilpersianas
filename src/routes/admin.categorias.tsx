@@ -505,6 +505,24 @@ function Categories() {
                     placeholder="▦  ou  🪟"
                   />
                 </div>
+                <div>
+                  <Label className="text-xs">
+                    Posição (ordem de exibição)
+                  </Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={editing.position ?? 0}
+                    onChange={(e) =>
+                      setEditing({ ...editing, position: Number(e.target.value) || 0 })
+                    }
+                    placeholder="0"
+                  />
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    Menor número aparece primeiro no menu e nas páginas da loja.
+                    Você também pode usar as setas ↑↓ na lista ao lado.
+                  </p>
+                </div>
                 <label className="flex items-center gap-2 text-sm py-1">
                   <Switch
                     checked={!!editing.active}
