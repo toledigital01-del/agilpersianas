@@ -733,7 +733,7 @@ function ColorsEditor({
       {colors.length === 0 ? (
         <p className="text-xs text-muted-foreground">Nenhuma cor cadastrada.</p>
       ) : (
-        <div className="grid sm:grid-cols-2 gap-2">
+        <div className="grid gap-2">
           {colors.map((c, i) => {
             const ok = galleryColors.has((c.name ?? "").trim().toLowerCase());
             return (
@@ -753,7 +753,42 @@ function ColorsEditor({
                 <Input
                   value={c.name}
                   onChange={(e) => update(i, { name: e.target.value })}
-                  className="h-8"
+                  className="h-8 flex-1"
+                  placeholder="Nome"
+                />
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">+R$</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={c.price_delta ?? ""}
+                    onChange={(e) => update(i, { price_delta: e.target.value === "" ? undefined : Number(e.target.value) })}
+                    placeholder="0,00"
+                    className="h-8 w-24"
+                    title="Acréscimo (ou desconto, com sinal -) no preço quando esta cor é selecionada"
+                  />
+                </div>
+                <span
+                  className={`text-[10px] font-bold uppercase tracking-wider ${
+                    ok ? "text-success" : "text-amber-700"
+                  }`}
+                >
+                  {ok ? "✓ foto" : "sem foto"}
+                </span>
+                <Button type="button" variant="ghost" size="icon" onClick={() => remove(i)}>
+                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <p className="text-[11px] text-muted-foreground">
+        💡 Use o campo <strong>+R$</strong> para cobrar a mais (ou menos, com sinal negativo) quando o cliente escolher esta cor.
+      </p>
+    </div>
+  );
+}
                 />
                 <span
                   className={`text-[10px] font-bold uppercase tracking-wider ${
