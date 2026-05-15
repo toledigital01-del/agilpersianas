@@ -112,10 +112,22 @@ export function BuyBox({
         ? product.motor_rf_price
         : product.motor_wifi_price;
 
+  const colorDelta = useMemo(() => {
+    const c = productColors.find((x) => x.name === color) as
+      | { name: string; hex: string; price_delta?: number }
+      | undefined;
+    return Number(c?.price_delta ?? 0) || 0;
+  }, [productColors, color]);
+
   const subtotal = useMemo(() => {
     const area = Math.max((width * height) / 10000, product.min_area);
-    return area * product.price_per_sqm + motorPrice + (bando ? product.bando_price : 0);
-  }, [width, height, motor, bando, product, motorPrice]);
+    return (
+      area * product.price_per_sqm +
+      motorPrice +
+      (bando ? product.bando_price : 0) +
+      colorDelta
+    );
+  }, [width, height, motor, bando, product, motorPrice, colorDelta]);
 
   const shippingCost = shipping?.price ?? 0;
   const total = subtotal + shippingCost;
@@ -207,6 +219,7 @@ export function BuyBox({
         <div className="flex flex-wrap gap-3">
           {productColors.map((c) => {
             const active = color === c.name;
+            const delta = Number((c as { price_delta?: number }).price_delta ?? 0) || 0;
             return (
               <button
                 key={c.name}
@@ -227,6 +240,11 @@ export function BuyBox({
                 <span className={`text-[11px] font-medium ${active ? "text-primary" : "text-muted-foreground"}`}>
                   {c.name}
                 </span>
+                {delta !== 0 && (
+                  <span className="text-[10px] font-semibold text-primary">
+                    {delta > 0 ? "+" : ""}{BRL(delta)}
+                  </span>
+                )}
               </button>
             );
           })}
