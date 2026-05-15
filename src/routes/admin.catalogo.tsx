@@ -789,22 +789,3 @@ function ColorsEditor({
     </div>
   );
 }
-                />
-                <span
-                  className={`text-[10px] font-bold uppercase tracking-wider ${
-                    ok ? "text-success" : "text-amber-700"
-                  }`}
-                >
-                  {ok ? "✓ foto" : "sem foto"}
-                </span>
-                <Button type="button" variant="ghost" size="icon" onClick={() => remove(i)}>
-                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                </Button>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
