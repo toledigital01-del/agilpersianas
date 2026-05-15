@@ -18,11 +18,12 @@ import { FileUpload } from "@/components/admin/FileUpload";
 import { GalleryEditor, type GalleryItem } from "@/components/admin/GalleryEditor";
 import { FeaturesEditor } from "@/components/admin/FeaturesEditor";
 import { FAQEditor, type FAQItem } from "@/components/admin/FAQEditor";
+import { SpecsEditor, type SpecItem } from "@/components/admin/SpecsEditor";
 
 export const Route = createFileRoute("/admin/catalogo")({ component: Catalog });
 
 type Category = { id: string; name: string; slug: string; parent_id: string | null };
-type Color = { name: string; hex: string };
+type Color = { name: string; hex: string; price_delta?: number };
 
 type Product = {
   id: string;
@@ -63,6 +64,7 @@ type Product = {
   colors: Color[];
   features: string[];
   faq: FAQItem[];
+  specs: SpecItem[];
   active: boolean;
   featured: boolean;
   bestseller: boolean;
@@ -111,6 +113,7 @@ const NEW_PRODUCT: Partial<Product> = {
   bestseller: false,
   features: [],
   faq: [],
+  specs: [],
   colors: [
     { name: "Branco", hex: "#FFFFFF" },
     { name: "Bege", hex: "#D7C4A3" },
@@ -361,6 +364,7 @@ function ProductEditor({ open, editing, setEditing, cats, extraCats, setExtraCat
             <TabsTrigger value="produto">Produto</TabsTrigger>
             <TabsTrigger value="fotos">Fotos</TabsTrigger>
             <TabsTrigger value="conteudo">Características & FAQ</TabsTrigger>
+            <TabsTrigger value="ficha">Ficha técnica</TabsTrigger>
             <TabsTrigger value="precos">Preços & Estoque</TabsTrigger>
             <TabsTrigger value="medidas">Medidas (m²)</TabsTrigger>
             <TabsTrigger value="entrega">Entrega</TabsTrigger>
@@ -490,6 +494,11 @@ function ProductEditor({ open, editing, setEditing, cats, extraCats, setExtraCat
           <TabsContent value="conteudo" className="space-y-6 pt-5">
             <FeaturesEditor items={e.features ?? []} onChange={(features) => set({ features })} />
             <FAQEditor items={e.faq ?? []} onChange={(faq) => set({ faq })} />
+          </TabsContent>
+
+          {/* ── FICHA TÉCNICA ── */}
+          <TabsContent value="ficha" className="space-y-4 pt-5">
+            <SpecsEditor items={e.specs ?? []} onChange={(specs) => set({ specs })} />
           </TabsContent>
 
           {/* ── PREÇOS & ESTOQUE ── */}
@@ -724,7 +733,7 @@ function ColorsEditor({
       {colors.length === 0 ? (
         <p className="text-xs text-muted-foreground">Nenhuma cor cadastrada.</p>
       ) : (
-        <div className="grid sm:grid-cols-2 gap-2">
+        <div className="grid gap-2">
           {colors.map((c, i) => {
             const ok = galleryColors.has((c.name ?? "").trim().toLowerCase());
             return (
@@ -744,8 +753,21 @@ function ColorsEditor({
                 <Input
                   value={c.name}
                   onChange={(e) => update(i, { name: e.target.value })}
-                  className="h-8"
+                  className="h-8 flex-1"
+                  placeholder="Nome"
                 />
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">+R$</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={c.price_delta ?? ""}
+                    onChange={(e) => update(i, { price_delta: e.target.value === "" ? undefined : Number(e.target.value) })}
+                    placeholder="0,00"
+                    className="h-8 w-24"
+                    title="Acréscimo (ou desconto, com sinal -) no preço quando esta cor é selecionada"
+                  />
+                </div>
                 <span
                   className={`text-[10px] font-bold uppercase tracking-wider ${
                     ok ? "text-success" : "text-amber-700"
@@ -761,6 +783,9 @@ function ColorsEditor({
           })}
         </div>
       )}
+      <p className="text-[11px] text-muted-foreground">
+        💡 Use o campo <strong>+R$</strong> para cobrar a mais (ou menos, com sinal negativo) quando o cliente escolher esta cor.
+      </p>
     </div>
   );
 }

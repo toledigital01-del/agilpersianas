@@ -17,6 +17,7 @@ import { ProductDescription } from "@/components/product/ProductDescription";
 import { ProductInstallation } from "@/components/product/ProductInstallation";
 import { ProductManual } from "@/components/product/ProductManual";
 import { ProductVideo } from "@/components/product/ProductVideo";
+import { ProductSpecsBox, type ProductSpec } from "@/components/product/ProductSpecsBox";
 import { QuoteSection } from "@/components/site/QuoteSection";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Star, ShieldCheck, Truck, Factory, Award } from "lucide-react";
@@ -50,6 +51,7 @@ export type Product = {
   motor_wifi_price: number;
   bando_price: number;
   colors: { name: string; hex: string }[];
+  specs: ProductSpec[];
   features: string[];
   faq: { q: string; a: string }[];
   rating: number;
@@ -103,8 +105,15 @@ function ProductPage() {
   const images = useMemo<GalleryImage[]>(() => {
     if (!product) return [];
     const list = Array.isArray(product.gallery) ? product.gallery : [];
-    if (list.length) return list;
-    return product.cover_image ? [product.cover_image] : [];
+    // A foto de capa (modelo "tipo Pinpoint Branca") deve sempre ser a 1ª, sem duplicar.
+    const cover = product.cover_image;
+    if (!cover) return list;
+    const coverUrl = cover;
+    const filtered = list.filter((g) => {
+      const url = typeof g === "string" ? g : g.url;
+      return url !== coverUrl;
+    });
+    return [coverUrl, ...filtered];
   }, [product]);
 
   // SEO – injeta título quando produto carrega
@@ -208,6 +217,13 @@ function ProductPage() {
           />
           <BuyBox product={product} onColorChange={setActiveColor} />
         </div>
+
+        {/* Aviso premium — ficha técnica editável no admin */}
+        {Array.isArray(product.specs) && product.specs.length > 0 && (
+          <div className="mt-10">
+            <ProductSpecsBox items={product.specs} />
+          </div>
+        )}
       </section>
 
       <TrustBar />
