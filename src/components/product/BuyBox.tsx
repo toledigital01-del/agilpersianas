@@ -71,6 +71,20 @@ export function BuyBox({
       { name: "Preta", hex: "#2A2D31" },
     ];
   }, [product.colors]);
+
+  // Mapa: nome da cor → 1ª imagem da galeria com esta cor (vira amostra do swatch)
+  const sampleByColor = useMemo(() => {
+    const m = new Map<string, string>();
+    const list = Array.isArray(product.gallery) ? product.gallery : [];
+    for (const g of list) {
+      const url = typeof g === "string" ? g : g.url;
+      const cname = typeof g === "string" ? "" : (g.color ?? "");
+      if (url && cname && !m.has(cname.toLowerCase())) {
+        m.set(cname.toLowerCase(), url);
+      }
+    }
+    return m;
+  }, [product.gallery]);
   const [color, setColor] = useState(
     initial.color && productColors.some((c) => c.name === initial.color)
       ? initial.color
@@ -220,6 +234,7 @@ export function BuyBox({
           {productColors.map((c) => {
             const active = color === c.name;
             const delta = Number((c as { price_delta?: number }).price_delta ?? 0) || 0;
+            const sample = sampleByColor.get(c.name.toLowerCase());
             return (
               <button
                 key={c.name}
@@ -230,13 +245,25 @@ export function BuyBox({
                 className="group flex flex-col items-center gap-1.5"
               >
                 <span
-                  className={`relative h-12 w-12 rounded-full transition-all ${
+                  className={`relative h-14 w-14 overflow-hidden rounded-full transition-all ${
                     active
                       ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-105 shadow-md"
                       : "ring-1 ring-border group-hover:ring-foreground/40 group-hover:scale-105"
                   }`}
-                  style={{ backgroundColor: c.hex, boxShadow: active ? "inset 0 0 0 2px rgba(255,255,255,.6)" : undefined }}
-                />
+                  style={!sample ? { backgroundColor: c.hex } : undefined}
+                >
+                  {sample && (
+                    <img
+                      src={sample}
+                      alt={c.name}
+                      className="absolute inset-0 h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  )}
+                  {active && (
+                    <span className="pointer-events-none absolute inset-0 ring-2 ring-inset ring-white/60 rounded-full" />
+                  )}
+                </span>
                 <span className={`text-[11px] font-medium ${active ? "text-primary" : "text-muted-foreground"}`}>
                   {c.name}
                 </span>
