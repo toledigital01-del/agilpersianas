@@ -44,9 +44,8 @@ export function FeaturedProducts() {
   });
 
   if (!cfg.enabled) return null;
-  // Oculta a seção inteira quando não há produtos suficientes para uma vitrine real
-  // (evita placeholder "Em breve..." e cards repetindo a mesma foto).
-  if (!isLoading && products.length < 4) {
+  // Só esconde quando realmente não há nenhum produto em destaque cadastrado.
+  if (!isLoading && products.length === 0) {
     return null;
   }
 
