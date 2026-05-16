@@ -92,11 +92,11 @@ export function CategoriesPremium() {
           <div className="max-w-2xl">
             <span className="eyebrow">Coleção 2026</span>
             <h2 className="text-display mt-3 text-4xl md:text-6xl">
-              Produtos em destaque
+              Navegue por categoria
             </h2>
             <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
-              Tecidos premium, sob medida exata e instalação profissional. Escolha
-              o modelo perfeito para cada janela.
+              Persianas, cortinas e toldos sob medida — escolha o modelo perfeito
+              para cada janela com tecidos premium e instalação profissional.
             </p>
           </div>
           <Link
