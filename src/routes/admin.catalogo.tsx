@@ -317,52 +317,66 @@ function Catalog() {
           <p className="text-muted-foreground">Nenhum produto encontrado.</p>
         </Card>
       ) : (
-        <div className="grid gap-3">
-          {filtered.map((p) => {
-            const lowS = p.product_type === "simples" && p.stock <= p.stock_min && p.active;
-            const finalPrice = p.sale_price && p.sale_price > 0 ? p.sale_price : p.price;
-            return (
-              <Card key={p.id} className="p-4 flex items-center gap-4 hover:shadow-md transition">
-                <div className="h-16 w-16 rounded-lg bg-sand overflow-hidden shrink-0">
-                  {p.cover_image && <img src={p.cover_image} alt="" className="w-full h-full object-cover" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold truncate">{p.name}</h3>
-                    {p.featured && <Badge className="bg-primary/10 text-primary border-0">Destaque</Badge>}
-                    {!p.active && <Badge variant="secondary">Inativo</Badge>}
-                    {lowS && <Badge className="bg-amber-100 text-amber-900 border-0">Estoque baixo</Badge>}
+        <>
+          <p className="text-xs text-muted-foreground -mt-1">
+            {canReorder
+              ? "Arraste pelo ícone à esquerda para reordenar os produtos. A ordem é refletida no site."
+              : "Limpe a busca e o filtro para reordenar os produtos arrastando."}
+          </p>
+          <SortableList
+            items={filtered}
+            getId={(p) => p.id}
+            onReorder={(next) => canReorder && reorder(next)}
+            renderItem={(p, _idx, handle) => {
+              const lowS = p.product_type === "simples" && p.stock <= p.stock_min && p.active;
+              const finalPrice = p.sale_price && p.sale_price > 0 ? p.sale_price : p.price;
+              return (
+                <Card className="p-4 flex items-center gap-3 hover:shadow-md transition">
+                  {canReorder ? handle : <div className="w-8" aria-hidden />}
+                  <div className="h-16 w-16 rounded-lg bg-sand overflow-hidden shrink-0">
+                    {p.cover_image && <img src={p.cover_image} alt="" className="w-full h-full object-cover" />}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-3 flex-wrap">
-                    <span>{catLabel(p.category_id)}</span>
-                    <span>·</span>
-                    {p.product_type === "metro_quadrado" ? (
-                      <span>R$ {Number(p.price_per_sqm).toFixed(2)} /m²</span>
-                    ) : (
-                      <span>
-                        R$ {Number(finalPrice).toFixed(2)}
-                        {p.sale_price && p.sale_price > 0 && p.sale_price < p.price && (
-                          <span className="line-through ml-1 opacity-60">R$ {Number(p.price).toFixed(2)}</span>
-                        )}
-                      </span>
-                    )}
-                    {p.sku && <><span>·</span><span>SKU {p.sku}</span></>}
-                    {p.product_type === "simples" && <><span>·</span><span>Estoque: {p.stock}</span></>}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold truncate">{p.name}</h3>
+                      {p.featured && <Badge className="bg-primary/10 text-primary border-0">Destaque</Badge>}
+                      {!p.active && <Badge variant="secondary">Inativo</Badge>}
+                      {lowS && <Badge className="bg-amber-100 text-amber-900 border-0">Estoque baixo</Badge>}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-3 flex-wrap">
+                      <span>{catLabel(p.category_id)}</span>
+                      <span>·</span>
+                      {p.product_type === "metro_quadrado" ? (
+                        <span>R$ {Number(p.price_per_sqm).toFixed(2)} /m²</span>
+                      ) : (
+                        <span>
+                          R$ {Number(finalPrice).toFixed(2)}
+                          {p.sale_price && p.sale_price > 0 && p.sale_price < p.price && (
+                            <span className="line-through ml-1 opacity-60">R$ {Number(p.price).toFixed(2)}</span>
+                          )}
+                        </span>
+                      )}
+                      {p.sku && <><span>·</span><span>SKU {p.sku}</span></>}
+                      {p.product_type === "simples" && <><span>·</span><span>Estoque: {p.stock}</span></>}
+                    </div>
                   </div>
-                </div>
-                <Link to="/produto/$slug" params={{ slug: p.slug }} className="text-muted-foreground hover:text-primary" title="Ver na loja">
-                  <ExternalLink className="h-4 w-4" />
-                </Link>
-                <Button variant="ghost" size="icon" onClick={() => startEdit(p)}>
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => remove(p.id)}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </Card>
-            );
-          })}
-        </div>
+                  <Link to="/produto/$slug" params={{ slug: p.slug }} className="text-muted-foreground hover:text-primary" title="Ver na loja">
+                    <ExternalLink className="h-4 w-4" />
+                  </Link>
+                  <Button variant="ghost" size="icon" onClick={() => startEdit(p)} title="Editar">
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => duplicate(p)} title="Duplicar produto">
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => remove(p.id)} title="Excluir">
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </Card>
+              );
+            }}
+          />
+        </>
       )}
 
       <ProductEditor
