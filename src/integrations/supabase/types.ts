@@ -460,6 +460,7 @@ export type Database = {
           package_height_cm: number
           package_length_cm: number
           package_width_cm: number
+          position: number
           price: number
           price_per_sqm: number
           processing_days: number
@@ -509,6 +510,7 @@ export type Database = {
           package_height_cm?: number
           package_length_cm?: number
           package_width_cm?: number
+          position?: number
           price?: number
           price_per_sqm?: number
           processing_days?: number
@@ -558,6 +560,7 @@ export type Database = {
           package_height_cm?: number
           package_length_cm?: number
           package_width_cm?: number
+          position?: number
           price?: number
           price_per_sqm?: number
           processing_days?: number
