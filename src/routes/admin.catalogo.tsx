@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, Edit, Trash2, Search, Package, ExternalLink, Loader2, AlertTriangle } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Package, ExternalLink, Loader2, AlertTriangle, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { FileUpload } from "@/components/admin/FileUpload";
@@ -19,6 +19,7 @@ import { GalleryEditor, type GalleryItem } from "@/components/admin/GalleryEdito
 import { FeaturesEditor } from "@/components/admin/FeaturesEditor";
 import { FAQEditor, type FAQItem } from "@/components/admin/FAQEditor";
 import { SpecsEditor, type SpecItem } from "@/components/admin/SpecsEditor";
+import { SortableList } from "@/components/admin/site/_shared/SortableList";
 
 export const Route = createFileRoute("/admin/catalogo")({ component: Catalog });
 
@@ -68,6 +69,7 @@ type Product = {
   active: boolean;
   featured: boolean;
   bestseller: boolean;
+  position: number;
 };
 
 const slugify = (s: string) =>
@@ -134,7 +136,11 @@ function Catalog() {
   async function load() {
     setLoading(true);
     const [{ data: p }, { data: c }] = await Promise.all([
-      supabase.from("products").select("*").order("created_at", { ascending: false }),
+      supabase
+        .from("products")
+        .select("*")
+        .order("position", { ascending: true })
+        .order("created_at", { ascending: false }),
       supabase.from("categories").select("id,name,slug,parent_id").order("position"),
     ]);
     setProducts((p ?? []) as unknown as Product[]);
@@ -209,7 +215,57 @@ function Catalog() {
     load();
   }
 
+  async function duplicate(p: Product) {
+    const baseSlug = `${p.slug}-copia`;
+    let slug = baseSlug;
+    let n = 2;
+    // ensure unique slug
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const { data: ex } = await supabase.from("products").select("id").eq("slug", slug).maybeSingle();
+      if (!ex) break;
+      slug = `${baseSlug}-${n++}`;
+    }
+    const { id: _id, created_at: _ca, updated_at: _ua, ...rest } = p as Product & { created_at?: string; updated_at?: string };
+    void _id; void _ca; void _ua;
+    const payload = {
+      ...rest,
+      name: `${p.name} (cópia)`,
+      slug,
+      sku: p.sku ? `${p.sku}-COPY` : null,
+      featured: false,
+      bestseller: false,
+      position: (p.position ?? 0) + 1,
+    };
+    const { data: created, error } = await supabase.from("products").insert(payload as never).select("id").single();
+    if (error) return toast.error(error.message);
+    // copy product_categories
+    if (created?.id) {
+      const { data: cats } = await supabase.from("product_categories").select("category_id").eq("product_id", p.id);
+      if (cats && cats.length) {
+        await supabase.from("product_categories").insert(cats.map((c) => ({ product_id: created.id, category_id: c.category_id })));
+      }
+    }
+    toast.success("Produto duplicado");
+    load();
+  }
+
+  async function reorder(next: Product[]) {
+    setProducts(next);
+    const updates = next.map((p, idx) => ({ id: p.id, position: idx + 1 }));
+    // Update only items whose position actually changed
+    const changed = updates.filter((u) => {
+      const orig = products.find((x) => x.id === u.id);
+      return !orig || orig.position !== u.position;
+    });
+    for (const u of changed) {
+      await supabase.from("products").update({ position: u.position }).eq("id", u.id);
+    }
+    if (changed.length) toast.success("Ordem atualizada");
+  }
+
   const lowStock = products.filter((p) => p.product_type === "simples" && p.stock <= p.stock_min && p.active).length;
+  const canReorder = !search && !filterCat;
 
   return (
     <div className="space-y-6 max-w-[1400px]">
@@ -261,52 +317,66 @@ function Catalog() {
           <p className="text-muted-foreground">Nenhum produto encontrado.</p>
         </Card>
       ) : (
-        <div className="grid gap-3">
-          {filtered.map((p) => {
-            const lowS = p.product_type === "simples" && p.stock <= p.stock_min && p.active;
-            const finalPrice = p.sale_price && p.sale_price > 0 ? p.sale_price : p.price;
-            return (
-              <Card key={p.id} className="p-4 flex items-center gap-4 hover:shadow-md transition">
-                <div className="h-16 w-16 rounded-lg bg-sand overflow-hidden shrink-0">
-                  {p.cover_image && <img src={p.cover_image} alt="" className="w-full h-full object-cover" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold truncate">{p.name}</h3>
-                    {p.featured && <Badge className="bg-primary/10 text-primary border-0">Destaque</Badge>}
-                    {!p.active && <Badge variant="secondary">Inativo</Badge>}
-                    {lowS && <Badge className="bg-amber-100 text-amber-900 border-0">Estoque baixo</Badge>}
+        <>
+          <p className="text-xs text-muted-foreground -mt-1">
+            {canReorder
+              ? "Arraste pelo ícone à esquerda para reordenar os produtos. A ordem é refletida no site."
+              : "Limpe a busca e o filtro para reordenar os produtos arrastando."}
+          </p>
+          <SortableList
+            items={filtered}
+            getId={(p) => p.id}
+            onReorder={(next) => canReorder && reorder(next)}
+            renderItem={(p, _idx, handle) => {
+              const lowS = p.product_type === "simples" && p.stock <= p.stock_min && p.active;
+              const finalPrice = p.sale_price && p.sale_price > 0 ? p.sale_price : p.price;
+              return (
+                <Card className="p-4 flex items-center gap-3 hover:shadow-md transition">
+                  {canReorder ? handle : <div className="w-8" aria-hidden />}
+                  <div className="h-16 w-16 rounded-lg bg-sand overflow-hidden shrink-0">
+                    {p.cover_image && <img src={p.cover_image} alt="" className="w-full h-full object-cover" />}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-3 flex-wrap">
-                    <span>{catLabel(p.category_id)}</span>
-                    <span>·</span>
-                    {p.product_type === "metro_quadrado" ? (
-                      <span>R$ {Number(p.price_per_sqm).toFixed(2)} /m²</span>
-                    ) : (
-                      <span>
-                        R$ {Number(finalPrice).toFixed(2)}
-                        {p.sale_price && p.sale_price > 0 && p.sale_price < p.price && (
-                          <span className="line-through ml-1 opacity-60">R$ {Number(p.price).toFixed(2)}</span>
-                        )}
-                      </span>
-                    )}
-                    {p.sku && <><span>·</span><span>SKU {p.sku}</span></>}
-                    {p.product_type === "simples" && <><span>·</span><span>Estoque: {p.stock}</span></>}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold truncate">{p.name}</h3>
+                      {p.featured && <Badge className="bg-primary/10 text-primary border-0">Destaque</Badge>}
+                      {!p.active && <Badge variant="secondary">Inativo</Badge>}
+                      {lowS && <Badge className="bg-amber-100 text-amber-900 border-0">Estoque baixo</Badge>}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-3 flex-wrap">
+                      <span>{catLabel(p.category_id)}</span>
+                      <span>·</span>
+                      {p.product_type === "metro_quadrado" ? (
+                        <span>R$ {Number(p.price_per_sqm).toFixed(2)} /m²</span>
+                      ) : (
+                        <span>
+                          R$ {Number(finalPrice).toFixed(2)}
+                          {p.sale_price && p.sale_price > 0 && p.sale_price < p.price && (
+                            <span className="line-through ml-1 opacity-60">R$ {Number(p.price).toFixed(2)}</span>
+                          )}
+                        </span>
+                      )}
+                      {p.sku && <><span>·</span><span>SKU {p.sku}</span></>}
+                      {p.product_type === "simples" && <><span>·</span><span>Estoque: {p.stock}</span></>}
+                    </div>
                   </div>
-                </div>
-                <Link to="/produto/$slug" params={{ slug: p.slug }} className="text-muted-foreground hover:text-primary" title="Ver na loja">
-                  <ExternalLink className="h-4 w-4" />
-                </Link>
-                <Button variant="ghost" size="icon" onClick={() => startEdit(p)}>
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => remove(p.id)}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </Card>
-            );
-          })}
-        </div>
+                  <Link to="/produto/$slug" params={{ slug: p.slug }} className="text-muted-foreground hover:text-primary" title="Ver na loja">
+                    <ExternalLink className="h-4 w-4" />
+                  </Link>
+                  <Button variant="ghost" size="icon" onClick={() => startEdit(p)} title="Editar">
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => duplicate(p)} title="Duplicar produto">
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => remove(p.id)} title="Excluir">
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </Card>
+              );
+            }}
+          />
+        </>
       )}
 
       <ProductEditor

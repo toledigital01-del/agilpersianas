@@ -34,6 +34,7 @@ export function FeaturedProducts() {
         )
         .eq("active", true)
         .eq("featured", true)
+        .order("position", { ascending: true })
         .order("bestseller", { ascending: false })
         .limit(limit);
       if (error) throw error;

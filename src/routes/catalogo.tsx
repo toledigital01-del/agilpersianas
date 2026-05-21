@@ -87,7 +87,11 @@ function CatalogoPage() {
       if (categoryIds.length > 0) q = q.in("category_id", categoryIds);
       if (search.q) q = q.ilike("name", `%${search.q}%`);
       if (onlyBestsellers) q = q.eq("bestseller", true);
-      const { data, error } = await q.order("bestseller", { ascending: false }).order("featured", { ascending: false }).limit(120);
+      const { data, error } = await q
+        .order("position", { ascending: true })
+        .order("bestseller", { ascending: false })
+        .order("featured", { ascending: false })
+        .limit(120);
       if (error) throw error;
       return (data ?? []) as ProductRow[];
     },
