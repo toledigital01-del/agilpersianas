@@ -136,7 +136,11 @@ function Catalog() {
   async function load() {
     setLoading(true);
     const [{ data: p }, { data: c }] = await Promise.all([
-      supabase.from("products").select("*").order("created_at", { ascending: false }),
+      supabase
+        .from("products")
+        .select("*")
+        .order("position", { ascending: true })
+        .order("created_at", { ascending: false }),
       supabase.from("categories").select("id,name,slug,parent_id").order("position"),
     ]);
     setProducts((p ?? []) as unknown as Product[]);
@@ -211,7 +215,57 @@ function Catalog() {
     load();
   }
 
+  async function duplicate(p: Product) {
+    const baseSlug = `${p.slug}-copia`;
+    let slug = baseSlug;
+    let n = 2;
+    // ensure unique slug
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const { data: ex } = await supabase.from("products").select("id").eq("slug", slug).maybeSingle();
+      if (!ex) break;
+      slug = `${baseSlug}-${n++}`;
+    }
+    const { id: _id, created_at: _ca, updated_at: _ua, ...rest } = p as Product & { created_at?: string; updated_at?: string };
+    void _id; void _ca; void _ua;
+    const payload = {
+      ...rest,
+      name: `${p.name} (cópia)`,
+      slug,
+      sku: p.sku ? `${p.sku}-COPY` : null,
+      featured: false,
+      bestseller: false,
+      position: (p.position ?? 0) + 1,
+    };
+    const { data: created, error } = await supabase.from("products").insert(payload as never).select("id").single();
+    if (error) return toast.error(error.message);
+    // copy product_categories
+    if (created?.id) {
+      const { data: cats } = await supabase.from("product_categories").select("category_id").eq("product_id", p.id);
+      if (cats && cats.length) {
+        await supabase.from("product_categories").insert(cats.map((c) => ({ product_id: created.id, category_id: c.category_id })));
+      }
+    }
+    toast.success("Produto duplicado");
+    load();
+  }
+
+  async function reorder(next: Product[]) {
+    setProducts(next);
+    const updates = next.map((p, idx) => ({ id: p.id, position: idx + 1 }));
+    // Update only items whose position actually changed
+    const changed = updates.filter((u) => {
+      const orig = products.find((x) => x.id === u.id);
+      return !orig || orig.position !== u.position;
+    });
+    for (const u of changed) {
+      await supabase.from("products").update({ position: u.position }).eq("id", u.id);
+    }
+    if (changed.length) toast.success("Ordem atualizada");
+  }
+
   const lowStock = products.filter((p) => p.product_type === "simples" && p.stock <= p.stock_min && p.active).length;
+  const canReorder = !search && !filterCat;
 
   return (
     <div className="space-y-6 max-w-[1400px]">
