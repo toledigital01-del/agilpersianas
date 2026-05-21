@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, Edit, Trash2, Search, Package, ExternalLink, Loader2, AlertTriangle } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Package, ExternalLink, Loader2, AlertTriangle, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { FileUpload } from "@/components/admin/FileUpload";
@@ -19,6 +19,7 @@ import { GalleryEditor, type GalleryItem } from "@/components/admin/GalleryEdito
 import { FeaturesEditor } from "@/components/admin/FeaturesEditor";
 import { FAQEditor, type FAQItem } from "@/components/admin/FAQEditor";
 import { SpecsEditor, type SpecItem } from "@/components/admin/SpecsEditor";
+import { SortableList } from "@/components/admin/site/_shared/SortableList";
 
 export const Route = createFileRoute("/admin/catalogo")({ component: Catalog });
 
@@ -68,6 +69,7 @@ type Product = {
   active: boolean;
   featured: boolean;
   bestseller: boolean;
+  position: number;
 };
 
 const slugify = (s: string) =>
