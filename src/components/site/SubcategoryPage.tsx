@@ -131,6 +131,7 @@ export function SubcategoryPage({
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
       const { data: rows, count } = await query
+        .order("position", { ascending: true })
         .order(o.col, { ascending: o.asc })
         .order("id", { ascending: true })
         .range(from, to);

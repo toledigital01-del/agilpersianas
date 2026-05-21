@@ -93,6 +93,7 @@ function ToldosPage() {
         .from("products")
         .select("id,name,slug,price,sale_price,price_per_sqm,cover_image,rating,reviews_count,badge,short_description")
         .eq("active", true)
+        .order("position", { ascending: true })
         .order("featured", { ascending: false })
         .order("bestseller", { ascending: false })
         .limit(8);
