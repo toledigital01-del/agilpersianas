@@ -28,6 +28,22 @@ function guessHex(name: string): string {
   return FALLBACK_HEX[k] ?? "#B8B8B8";
 }
 
+/** Paleta neutra padrão usada quando o produto não tem cores curadas nem cadastradas. */
+const DEFAULT_NEUTRAL_PALETTE: { name: string; hex: string }[] = [
+  { name: "Branco", hex: "#F2F2EE" },
+  { name: "Bege", hex: "#D9C7A9" },
+  { name: "Cinza", hex: "#9B9C99" },
+  { name: "Marrom", hex: "#7A6852" },
+  { name: "Preto", hex: "#33373B" },
+];
+
+/** Ambientes de demonstração — para clientes que querem testar sem enviar foto própria. */
+const DEMO_ROOMS: { label: string; url: string }[] = [
+  { label: "Sala", url: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1280&q=80" },
+  { label: "Quarto", url: "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=1280&q=80" },
+  { label: "Escritório", url: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1280&q=80" },
+];
+
 function toTitle(s: string): string {
   return s
     .toLowerCase()
