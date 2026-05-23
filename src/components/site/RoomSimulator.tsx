@@ -413,6 +413,23 @@ function RoomSimulatorInner() {
                   </button>
                 </div>
                 <p className="text-[11px] text-muted-foreground">JPG ou PNG · até 12MB · sua imagem não é armazenada</p>
+                <div className="mt-2 flex w-full flex-col items-center gap-2 border-t border-border/60 pt-3">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Sem foto agora? Use um ambiente de demonstração
+                  </span>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    {DEMO_ROOMS.map((d) => (
+                      <button
+                        key={d.label}
+                        type="button"
+                        onClick={() => useDemoRoom(d.url)}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-3 py-1.5 text-[11px] font-semibold transition hover:border-primary hover:bg-primary/5"
+                      >
+                        {d.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
