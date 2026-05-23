@@ -290,6 +290,19 @@ function RoomSimulatorInner() {
     }
   }
 
+  async function useDemoRoom(url: string) {
+    try {
+      const resp = await fetch(url);
+      const blob = await resp.blob();
+      const raw = await fileToDataUrl(new File([blob], "demo.jpg", { type: blob.type || "image/jpeg" }));
+      const small = await downscaleImage(raw, 1280);
+      setOriginal(small);
+      setResult(null);
+    } catch {
+      toast.error("Não consegui carregar o ambiente de demonstração.");
+    }
+  }
+
   async function generate() {
     if (!original) {
       toast.error("Envie a foto da sua janela primeiro.");
