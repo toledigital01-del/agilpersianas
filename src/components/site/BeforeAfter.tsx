@@ -1,9 +1,9 @@
 // Seção "Antes & Depois" — comparador interativo (slider)
 import { useEffect, useRef, useState, useCallback } from "react";
-import beforeImg from "@/assets/before-sala.jpg";
-import afterImg from "@/assets/after-sala-persiana.jpg";
-import beforeImg2 from "@/assets/before-quarto.jpg";
-import afterImg2 from "@/assets/hero-2026-bedroom.jpg";
+import beforeImg from "@/assets/ba-sala-antes.jpg";
+import afterImg from "@/assets/ba-sala-depois.jpg";
+import beforeImg2 from "@/assets/ba-quarto-antes.jpg";
+import afterImg2 from "@/assets/ba-quarto-depois.jpg";
 import { Sparkles } from "lucide-react";
 import { useSiteSetting } from "@/hooks/use-site-setting";
 import { BEFORE_AFTER_DEFAULTS, type BeforeAfterConfig } from "@/components/admin/site/BeforeAfterModule";
@@ -15,13 +15,13 @@ const FALLBACK_PAIRS: Pair[] = [
     before: beforeImg,
     after: afterImg,
     title: "Sala de estar",
-    desc: "Antes: janela nua e luz forte. Depois: persiana rolô em linho premium, luz suave e elegante.",
+    desc: "Antes: janela nua e sol direto na sala. Depois: a mesma sala com persiana rolô em linho premium, luz suave e ambiente acolhedor.",
   },
   {
     before: beforeImg2,
     after: afterImg2,
     title: "Quarto principal",
-    desc: "Antes: claridade desconfortável ao acordar. Depois: persiana rolô blackout, escurecimento total e conforto térmico.",
+    desc: "Antes: claridade desconfortável ao acordar. Depois: o mesmo quarto com persiana rolô blackout, escurecimento total e conforto térmico.",
   },
 ];
 

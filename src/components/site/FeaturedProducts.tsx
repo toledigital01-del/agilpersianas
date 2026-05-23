@@ -27,7 +27,7 @@ export function FeaturedProducts() {
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["featured-products", limit],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: marked, error } = await supabase
         .from("products")
         .select(
           "id, name, slug, badge, price, sale_price, price_per_sqm, product_type, rating, reviews_count, cover_image, bestseller",
@@ -38,7 +38,24 @@ export function FeaturedProducts() {
         .order("bestseller", { ascending: false })
         .limit(limit);
       if (error) throw error;
-      return (data ?? []) as Product[];
+      const markedList = (marked ?? []) as Product[];
+      if (markedList.length >= limit) return markedList;
+
+      // Complementa com produtos ativos mais bem avaliados (sem duplicar)
+      const { data: top, error: e2 } = await supabase
+        .from("products")
+        .select(
+          "id, name, slug, badge, price, sale_price, price_per_sqm, product_type, rating, reviews_count, cover_image, bestseller",
+        )
+        .eq("active", true)
+        .order("position", { ascending: true })
+        .order("rating", { ascending: false })
+        .order("reviews_count", { ascending: false })
+        .limit(limit + markedList.length);
+      if (e2) throw e2;
+      const ids = new Set(markedList.map((p) => p.id));
+      const filler = ((top ?? []) as Product[]).filter((p) => !ids.has(p.id));
+      return [...markedList, ...filler].slice(0, limit);
     },
     staleTime: 0,
     refetchOnMount: "always",
