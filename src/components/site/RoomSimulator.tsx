@@ -173,9 +173,8 @@ function RoomSimulatorInner() {
               img: typeof c.img === "string" && c.img ? c.img : cover,
             }));
           if (thumbs.length === 0) {
-            // derive a single neutral color from the product name
-            const guessName = (p.name as string).split(" ").pop() ?? "Padrão";
-            thumbs.push({ color: guessName, hex: guessHex(guessName), img: cover });
+            // Fallback final: paleta neutra padrão (5 cores) para garantir escolha real ao cliente.
+            thumbs = DEFAULT_NEUTRAL_PALETTE.map((c) => ({ color: c.name, hex: c.hex, img: cover }));
           }
           // Use the first root category as primary grouping
           const primaryRoot = catById.get(roots[0])!;
