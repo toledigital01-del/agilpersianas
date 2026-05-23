@@ -28,6 +28,22 @@ function guessHex(name: string): string {
   return FALLBACK_HEX[k] ?? "#B8B8B8";
 }
 
+/** Paleta neutra padrão usada quando o produto não tem cores curadas nem cadastradas. */
+const DEFAULT_NEUTRAL_PALETTE: { name: string; hex: string }[] = [
+  { name: "Branco", hex: "#F2F2EE" },
+  { name: "Bege", hex: "#D9C7A9" },
+  { name: "Cinza", hex: "#9B9C99" },
+  { name: "Marrom", hex: "#7A6852" },
+  { name: "Preto", hex: "#33373B" },
+];
+
+/** Ambientes de demonstração — para clientes que querem testar sem enviar foto própria. */
+const DEMO_ROOMS: { label: string; url: string }[] = [
+  { label: "Sala", url: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1280&q=80" },
+  { label: "Quarto", url: "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=1280&q=80" },
+  { label: "Escritório", url: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1280&q=80" },
+];
+
 function toTitle(s: string): string {
   return s
     .toLowerCase()
@@ -157,9 +173,8 @@ function RoomSimulatorInner() {
               img: typeof c.img === "string" && c.img ? c.img : cover,
             }));
           if (thumbs.length === 0) {
-            // derive a single neutral color from the product name
-            const guessName = (p.name as string).split(" ").pop() ?? "Padrão";
-            thumbs.push({ color: guessName, hex: guessHex(guessName), img: cover });
+            // Fallback final: paleta neutra padrão (5 cores) para garantir escolha real ao cliente.
+            thumbs = DEFAULT_NEUTRAL_PALETTE.map((c) => ({ color: c.name, hex: c.hex, img: cover }));
           }
           // Use the first root category as primary grouping
           const primaryRoot = catById.get(roots[0])!;
@@ -275,6 +290,19 @@ function RoomSimulatorInner() {
     }
   }
 
+  async function useDemoRoom(url: string) {
+    try {
+      const resp = await fetch(url);
+      const blob = await resp.blob();
+      const raw = await fileToDataUrl(new File([blob], "demo.jpg", { type: blob.type || "image/jpeg" }));
+      const small = await downscaleImage(raw, 1280);
+      setOriginal(small);
+      setResult(null);
+    } catch {
+      toast.error("Não consegui carregar o ambiente de demonstração.");
+    }
+  }
+
   async function generate() {
     if (!original) {
       toast.error("Envie a foto da sua janela primeiro.");
@@ -385,6 +413,23 @@ function RoomSimulatorInner() {
                   </button>
                 </div>
                 <p className="text-[11px] text-muted-foreground">JPG ou PNG · até 12MB · sua imagem não é armazenada</p>
+                <div className="mt-2 flex w-full flex-col items-center gap-2 border-t border-border/60 pt-3">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Sem foto agora? Use um ambiente de demonstração
+                  </span>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    {DEMO_ROOMS.map((d) => (
+                      <button
+                        key={d.label}
+                        type="button"
+                        onClick={() => useDemoRoom(d.url)}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-3 py-1.5 text-[11px] font-semibold transition hover:border-primary hover:bg-primary/5"
+                      >
+                        {d.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
