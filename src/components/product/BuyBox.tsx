@@ -22,6 +22,7 @@ import {
   CordLeft, CordRight, NoBando, WithBando,
   HandManual, MotorRf, MotorWifi, MountInside, MountOutside,
 } from "./BlindIcons";
+import { paletteFor } from "@/lib/fabric-palettes";
 
 const BRL = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -64,13 +65,29 @@ export function BuyBox({
     if (Array.isArray(product.colors) && product.colors.length > 0) {
       return product.colors.filter((c) => c && c.name && c.hex);
     }
+    const curated = paletteFor(product.name ?? "", product.short_description ?? "");
+    if (curated && curated.length > 0) {
+      return curated.map((c) => ({ name: c.name, hex: c.hex }));
+    }
     return [
       { name: "Branca", hex: "#F4F2EC" },
       { name: "Bege", hex: "#E5DDCC" },
       { name: "Cinza", hex: "#BFC0BE" },
       { name: "Preta", hex: "#2A2D31" },
     ];
-  }, [product.colors]);
+  }, [product.colors, product.name, product.short_description]);
+
+  // Amostras reais de tecido por nome de cor (curadas).
+  const curatedSwatchByColor = useMemo(() => {
+    const m = new Map<string, string>();
+    const curated = paletteFor(product.name ?? "", product.short_description ?? "");
+    if (curated) {
+      for (const c of curated) {
+        if (c.swatch) m.set(c.name.toLowerCase(), c.swatch);
+      }
+    }
+    return m;
+  }, [product.name, product.short_description]);
 
   // Mapa: nome da cor → 1ª imagem da galeria com esta cor (vira amostra do swatch)
   const sampleByColor = useMemo(() => {
@@ -235,6 +252,7 @@ export function BuyBox({
             const active = color === c.name;
             const delta = Number((c as { price_delta?: number }).price_delta ?? 0) || 0;
             const sample = sampleByColor.get(c.name.toLowerCase());
+            const swatchImg = sample ?? curatedSwatchByColor.get(c.name.toLowerCase());
             return (
               <button
                 key={c.name}
@@ -250,11 +268,11 @@ export function BuyBox({
                       ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-105 shadow-md"
                       : "ring-1 ring-border group-hover:ring-foreground/40 group-hover:scale-105"
                   }`}
-                  style={!sample ? { backgroundColor: c.hex } : undefined}
+                  style={!swatchImg ? { backgroundColor: c.hex } : undefined}
                 >
-                  {sample && (
+                  {swatchImg && (
                     <img
-                      src={sample}
+                      src={swatchImg}
                       alt={c.name}
                       className="absolute inset-0 h-full w-full object-cover"
                       loading="lazy"
