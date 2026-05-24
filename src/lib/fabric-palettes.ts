@@ -14,11 +14,11 @@ export type FabricColor = {
 
 /** Texturizado / Translúcida (rolô, romana, painel) — exceto Tecido Liso. */
 export const TEXTURIZADO: FabricColor[] = [
-  { name: "Branco", hex: "#F4F0E7", swatch: "/fabrics/tex-strip-1.jpeg" },
-  { name: "Off-white", hex: "#E6DFD0", swatch: "/fabrics/tex-strip-1.jpeg" },
-  { name: "Bege Claro", hex: "#D9C7A9", swatch: "/fabrics/tex-strip-1.jpeg" },
-  { name: "Bege Areia", hex: "#C2A77F", swatch: "/fabrics/tex-strip-2.jpeg" },
-  { name: "Cinza", hex: "#A8A6A2", swatch: "/fabrics/tex-strip-2.jpeg" },
+  { name: "Branco", hex: "#F4F0E7", swatch: "/fabrics/tex-branco.png" },
+  { name: "Off-white", hex: "#EDE9DD", swatch: "/fabrics/tex-offwhite.png" },
+  { name: "Bege", hex: "#D9C7A9", swatch: "/fabrics/tex-bege.png" },
+  { name: "Verde Claro", hex: "#DDE3D6", swatch: "/fabrics/tex-verde-claro.png" },
+  { name: "Cinza", hex: "#A8AEB3", swatch: "/fabrics/tex-cinza.png" },
 ];
 
 /** Cortina Rolô Blackout — Tecido Liso (Pinpoint). */
