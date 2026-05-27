@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Camera, Upload, Sparkles, Loader2, Download, RotateCcw, Check, ShoppingBag, MessageCircle } from "lucide-react";
+import { Camera, Upload, Sparkles, Loader2, Download, RotateCcw, Check, ShoppingBag, MessageCircle, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { paletteFor, type FabricColor } from "@/lib/fabric-palettes";
@@ -112,6 +112,10 @@ function RoomSimulatorInner() {
   const [productId, setProductId] = useState<string>("");
   const [colorIdx, setColorIdx] = useState(0);
   const [categoryId, setCategoryId] = useState<string>("");
+  const [search, setSearch] = useState("");
+
+  const ALL_ID = "__all__";
+  const OTHER_ID = "__other__";
 
   useEffect(() => {
     let cancelled = false;
@@ -152,9 +156,11 @@ function RoomSimulatorInner() {
 
         for (const p of prods ?? []) {
           const roots = Array.from(productRoots.get(p.id) ?? []);
-          if (roots.length === 0) continue;
-          const cover = p.cover_image as string | null;
-          if (!cover) continue;
+          // Inclui TODOS os produtos ativos no simulador — sem categoria vai para "Outros",
+          // sem capa usa placeholder neutro para não travar a escolha.
+          const cover =
+            (p.cover_image as string | null) ||
+            "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=70";
           const colorsRaw: any[] = Array.isArray(p.colors) ? p.colors : [];
           // 1) Paleta curada por modelo (texturizado, pinpoint, tela solar, vedação)
           const curated = paletteFor(p.name as string, (p.short_description as string) ?? "");
@@ -176,16 +182,30 @@ function RoomSimulatorInner() {
             // Fallback final: paleta neutra padrão (5 cores) para garantir escolha real ao cliente.
             thumbs = DEFAULT_NEUTRAL_PALETTE.map((c) => ({ color: c.name, hex: c.hex, img: cover }));
           }
-          // Use the first root category as primary grouping
-          const primaryRoot = catById.get(roots[0])!;
-          const rootInfo = rootOf(primaryRoot.id)!;
-          if (!rootMap.has(rootInfo.id)) {
-            rootMap.set(rootInfo.id, {
-              id: rootInfo.id,
-              label: toTitle(rootInfo.name),
-              hint: "Sob medida · instalação realista por IA",
-              position: rootInfo.position,
-            });
+          // Use a primeira categoria-raiz como agrupamento; se não houver, vai para "Outros".
+          let rootId: string;
+          if (roots.length > 0) {
+            const primaryRoot = catById.get(roots[0])!;
+            const rootInfo = rootOf(primaryRoot.id)!;
+            rootId = rootInfo.id;
+            if (!rootMap.has(rootInfo.id)) {
+              rootMap.set(rootInfo.id, {
+                id: rootInfo.id,
+                label: toTitle(rootInfo.name),
+                hint: "Sob medida · instalação realista por IA",
+                position: rootInfo.position,
+              });
+            }
+          } else {
+            rootId = OTHER_ID;
+            if (!rootMap.has(OTHER_ID)) {
+              rootMap.set(OTHER_ID, {
+                id: OTHER_ID,
+                label: "Outros",
+                hint: "Demais produtos do catálogo",
+                position: 9999,
+              });
+            }
           }
           products.push({
             id: p.id,
@@ -194,19 +214,24 @@ function RoomSimulatorInner() {
             prompt: `${p.name}, instalada no topo da janela, tecido com caimento natural`,
             href: `/produto/${p.slug}`,
             cover,
-            category: rootInfo.id,
+            category: rootId,
             thumbs,
           });
         }
 
-        const categories = Array.from(rootMap.values())
+        const realCats = Array.from(rootMap.values())
           .sort((a, b) => a.position - b.position)
           .map(({ position: _p, ...rest }) => rest);
+        // Adiciona a opção "Todos" no topo para facilitar escolha entre TODOS os produtos.
+        const categories: CategoryOpt[] =
+          products.length > 0
+            ? [{ id: ALL_ID, label: "Todos os produtos", hint: `${products.length} modelos disponíveis` }, ...realCats]
+            : realCats;
 
         setCatalog({ categories, products });
         setCategoryId(categories[0]?.id ?? "");
         const firstProd = products.find((p) => p.category === (categories[0]?.id ?? ""));
-        setProductId(firstProd?.id ?? "");
+        setProductId(firstProd?.id ?? products[0]?.id ?? "");
         setColorIdx(0);
       } catch (e) {
         console.error("simulator catalog load", e);
@@ -219,10 +244,12 @@ function RoomSimulatorInner() {
     };
   }, []);
 
-  const productsInCategory = useMemo(
-    () => catalog.products.filter((p) => p.category === categoryId),
-    [catalog.products, categoryId],
-  );
+  const productsInCategory = useMemo(() => {
+    const base = categoryId === ALL_ID ? catalog.products : catalog.products.filter((p) => p.category === categoryId);
+    const q = search.trim().toLowerCase();
+    if (!q) return base;
+    return base.filter((p) => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
+  }, [catalog.products, categoryId, search]);
   const product = useMemo(
     () => catalog.products.find((p) => p.id === productId) ?? productsInCategory[0],
     [catalog.products, productId, productsInCategory],
