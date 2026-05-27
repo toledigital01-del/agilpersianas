@@ -587,13 +587,25 @@ function RoomSimulatorInner() {
             {/* Passo 2 — Tecido / Acabamento */}
             <div className="mt-6">
               <StepHeader n={2} title="Tecido / Acabamento" />
-              <div className="mt-3 grid grid-cols-3 gap-2.5">
+              <div className="relative mt-3">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar produto pelo nome…"
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 pl-9 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+              <div className="mt-3 grid max-h-[420px] grid-cols-3 gap-2.5 overflow-y-auto pr-1">
                 {catalogLoading && productsInCategory.length === 0 &&
                   Array.from({ length: 3 }).map((_, i) => (
                     <div key={i} className="aspect-[4/5] animate-pulse rounded-xl bg-muted" />
                   ))}
                 {!catalogLoading && productsInCategory.length === 0 && (
-                  <p className="col-span-3 text-xs text-muted-foreground">Nenhum produto cadastrado nesta categoria.</p>
+                  <p className="col-span-3 text-xs text-muted-foreground">
+                    {search ? "Nenhum produto encontrado para a busca." : "Nenhum produto cadastrado nesta categoria."}
+                  </p>
                 )}
                 {productsInCategory.map((p) => {
                   const active = productId === p.id;
