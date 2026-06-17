@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_ai_actions: {
+        Row: {
+          action: string
+          created_at: string
+          error: string | null
+          id: string
+          payload: Json
+          result: Json | null
+          status: string
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          payload?: Json
+          result?: Json | null
+          status?: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          payload?: Json
+          result?: Json | null
+          status?: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           active: boolean
