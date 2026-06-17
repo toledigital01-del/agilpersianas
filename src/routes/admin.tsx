@@ -32,6 +32,7 @@ export const Route = createFileRoute("/admin")({
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean };
 const NAV: NavItem[] = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { to: "/admin/ia", label: "Admin AI", icon: Sparkles },
   { to: "/admin/pedidos", label: "Pedidos", icon: ShoppingCart },
   { to: "/admin/orcamentos", label: "Orçamentos", icon: FileText },
   { to: "/admin/leads", label: "Leads CRM", icon: Users },
