@@ -45,6 +45,7 @@ import { Route as AdminLumiConfigRouteImport } from './routes/admin.lumi-config'
 import { Route as AdminLumiRouteImport } from './routes/admin.lumi'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as AdminIntegracoesRouteImport } from './routes/admin.integracoes'
+import { Route as AdminImagensRouteImport } from './routes/admin.imagens'
 import { Route as AdminIaRouteImport } from './routes/admin.ia'
 import { Route as AdminFinanceiroRouteImport } from './routes/admin.financeiro'
 import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
@@ -232,6 +233,11 @@ const AdminIntegracoesRoute = AdminIntegracoesRouteImport.update({
   path: '/integracoes',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminImagensRoute = AdminImagensRouteImport.update({
+  id: '/imagens',
+  path: '/imagens',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminIaRoute = AdminIaRouteImport.update({
   id: '/ia',
   path: '/ia',
@@ -289,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/financeiro': typeof AdminFinanceiroRoute
   '/admin/ia': typeof AdminIaRoute
+  '/admin/imagens': typeof AdminImagensRoute
   '/admin/integracoes': typeof AdminIntegracoesRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/lumi': typeof AdminLumiRoute
@@ -332,6 +339,7 @@ export interface FileRoutesByTo {
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/financeiro': typeof AdminFinanceiroRoute
   '/admin/ia': typeof AdminIaRoute
+  '/admin/imagens': typeof AdminImagensRoute
   '/admin/integracoes': typeof AdminIntegracoesRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/lumi': typeof AdminLumiRoute
@@ -377,6 +385,7 @@ export interface FileRoutesById {
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/financeiro': typeof AdminFinanceiroRoute
   '/admin/ia': typeof AdminIaRoute
+  '/admin/imagens': typeof AdminImagensRoute
   '/admin/integracoes': typeof AdminIntegracoesRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/lumi': typeof AdminLumiRoute
@@ -423,6 +432,7 @@ export interface FileRouteTypes {
     | '/admin/configuracoes'
     | '/admin/financeiro'
     | '/admin/ia'
+    | '/admin/imagens'
     | '/admin/integracoes'
     | '/admin/leads'
     | '/admin/lumi'
@@ -466,6 +476,7 @@ export interface FileRouteTypes {
     | '/admin/configuracoes'
     | '/admin/financeiro'
     | '/admin/ia'
+    | '/admin/imagens'
     | '/admin/integracoes'
     | '/admin/leads'
     | '/admin/lumi'
@@ -510,6 +521,7 @@ export interface FileRouteTypes {
     | '/admin/configuracoes'
     | '/admin/financeiro'
     | '/admin/ia'
+    | '/admin/imagens'
     | '/admin/integracoes'
     | '/admin/leads'
     | '/admin/lumi'
@@ -811,6 +823,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIntegracoesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/imagens': {
+      id: '/admin/imagens'
+      path: '/imagens'
+      fullPath: '/admin/imagens'
+      preLoaderRoute: typeof AdminImagensRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/ia': {
       id: '/admin/ia'
       path: '/ia'
@@ -862,6 +881,7 @@ interface AdminRouteChildren {
   AdminConfiguracoesRoute: typeof AdminConfiguracoesRoute
   AdminFinanceiroRoute: typeof AdminFinanceiroRoute
   AdminIaRoute: typeof AdminIaRoute
+  AdminImagensRoute: typeof AdminImagensRoute
   AdminIntegracoesRoute: typeof AdminIntegracoesRoute
   AdminLeadsRoute: typeof AdminLeadsRoute
   AdminLumiRoute: typeof AdminLumiRoute
@@ -882,6 +902,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminConfiguracoesRoute: AdminConfiguracoesRoute,
   AdminFinanceiroRoute: AdminFinanceiroRoute,
   AdminIaRoute: AdminIaRoute,
+  AdminImagensRoute: AdminImagensRoute,
   AdminIntegracoesRoute: AdminIntegracoesRoute,
   AdminLeadsRoute: AdminLeadsRoute,
   AdminLumiRoute: AdminLumiRoute,
@@ -928,12 +949,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
