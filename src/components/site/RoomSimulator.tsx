@@ -535,6 +535,14 @@ function RoomSimulatorInner() {
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
+                      onClick={generate}
+                      disabled={loading}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium hover:border-primary disabled:opacity-50"
+                    >
+                      {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />} Regenerar
+                    </button>
+                    <button
+                      type="button"
                       onClick={downloadResult}
                       className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium hover:border-primary"
                     >
