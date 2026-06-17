@@ -1,81 +1,74 @@
-## 1. Quiz · Frase do assistente
+## Objetivo
+Priorizar a IA do painel admin (executora com confirmação em ações críticas) que faz tudo: produtos, imagens, configurações do site, e consulta de leads/pedidos/relatórios. Otimização batch de imagens e SEO de alt/filenames ficam para etapas seguintes (ou podem ser executados pela própria IA depois).
 
-Em `src/components/site/QuizMatch.tsx`:
+## Etapa 1 — IA Admin (entregável desta rodada)
 
-- Trocar o texto "Assistente Ágil" (linha 660) por **Lumini** em **negrito** e **laranja** (`color: #FF6B35`, `fontWeight: 700`, sem letter-spacing largo, fonte um pouco maior — ~12px). Manter o avatar Bot.
-- Atualizar o default em `src/components/admin/site/QuizModule.tsx` (`QUIZ_DEFAULTS.assistantIntro`) removendo a frase **"Excelente escolha."** — passa a começar em "Vamos definir a solução…".
-- O painel admin já permite editar essa intro; só atualizamos o default usado quando ainda não há valor salvo.
+### Nova tela
+- Rota: `/admin/ia` (link no menu lateral do admin)
+- Interface de chat estilo Apple (consistente com a Lumi), mas dedicada à administração
+- Persistência: localStorage (1 conversa contínua, botão "Nova conversa")
+- Renderiza markdown + cards de "ação pendente" quando há confirmação
 
-## 2. Faixa promocional laranja (PromoStrip) — fix mobile
+### Backend
+- Nova Edge Function `admin-ai` (separada da `lumi-chat` que é voltada ao cliente)
+- Streaming via AI SDK + Lovable AI Gateway (`google/gemini-3-flash-preview`)
+- Autenticação obrigatória: só usuários com role `admin` podem chamar (valida JWT + `has_role`)
+- System prompt define persona "AGIL Admin AI" — assistente operacional do painel
 
-Sintomas: no mobile não passa todas as frases e fica lenta. Causas:
+### Ferramentas (tools) que a IA pode chamar
+**Leitura (sem confirmação):**
+- `list_products` (filtros: ativo, categoria, busca)
+- `get_product` (por slug ou id)
+- `list_categories`
+- `list_leads` (últimos N, filtro por status)
+- `list_orders` (últimos N, filtro por status de pagamento)
+- `get_site_setting` (qualquer chave de `site_settings`)
+- `get_metrics` (resumo: nº produtos ativos, leads do mês, pedidos pagos do mês, ticket médio)
 
-- Um único trilho de animação `marquee` de 16s com `whitespace-nowrap` e items grandes — no mobile a faixa total fica enorme e a velocidade aparente cai.
-- `overflow-hidden` no container, mas só renderiza um trilho (`[items, items, items]` num mesmo flex) com `transform: translateX(-50%)` aproximado pela keyframe — o loop não é "seamless" em todas as larguras.
+**Escrita com confirmação automática (ações críticas):**
+Toda tool que muta dados retorna `requires_confirmation: true` na primeira chamada; o usuário confirma no chat e a IA reenvia com `confirmed: true`:
+- `update_product` (descrição, short_description, SEO title/desc, alt text, preço, ativo)
+- `create_product` (novo SKU)
+- `delete_product` (sempre confirma)
+- `update_site_setting` (qualquer módulo do `/admin/site`: hero, banners, footer, FAQ, etc.)
+- `regenerate_product_alt_text` (gera alt SEO-friendly via IA para 1 ou N produtos)
+- `optimize_product_images` (converte para WebP + resize 1600px máx + reupload; atualiza URLs no banco)
+- `rewrite_product_description` (premium tone via IA)
+- `bulk_update_seo` (gera title + meta_description para N produtos faltantes)
 
-Correções em `src/components/site/PromoStrip.tsx` + `src/styles.css`:
+### Pattern de confirmação
+1. Usuário pede: "Reescreve as descrições dos 5 últimos produtos"
+2. IA chama tool → backend retorna preview + `requires_confirmation: true`
+3. Chat exibe card: "Vou reescrever 5 descrições. Confirmar?"
+4. Usuário clica "Confirmar" (ou digita "sim")
+5. IA reexecuta com flag `confirmed: true` → backend aplica e retorna resultado
 
-- Reduzir o tamanho da fonte e o gap horizontal no mobile (`mx-4 sm:mx-8`, `text-[11px]` no mobile).
-- Renderizar **dois trilhos lado a lado** (cada um com a lista uma vez) animando `translateX(0 → -100%)` no primeiro e o segundo deslocado em `translateX(100%)` para entrar — animação verdadeiramente contínua.
-- Acelerar a animação no mobile: `animation-duration` menor em telas pequenas (ex.: 22s mobile, 35s desktop) para sensação mais fluida.
-- Adicionar `prefers-reduced-motion` para respeitar acessibilidade.
+### Tabela nova
+- `admin_ai_actions` (log de auditoria: id, user_id, action, payload, result, status, created_at)
+- RLS: só admins veem; insert via service role na edge function
 
-## 3. Renomear menu admin "Catálogo" → "Produtos"
+## Etapa 2 — Otimização batch das imagens existentes
+Executada via a tool `optimize_product_images` da própria IA admin (você pede no chat: "otimiza todas as imagens do catálogo").
+- Lista todos `products.cover_image` + `product_images` que não são WebP ou são > 1600px
+- Em background: baixa, processa com `sharp` (server-side via edge function ou job), reenvia ao bucket, atualiza URLs
+- Como Cloudflare Workers/edge functions Deno têm limitação para `sharp`, usar `@jsquash/webp` (WebAssembly, compatível com Deno) ou processar em chunks pelo gateway de imagem
 
-Em `src/routes/admin.tsx` (NAV array): trocar o `label: "Catálogo"` por `label: "Produtos"`. Manter a rota `/admin/catalogo` (não renomear arquivo para evitar quebrar links). Trocar também o título exibido na página `src/routes/admin.catalogo.tsx` se houver heading "Catálogo".
-
-## 4. Cadastrar 8 produtos da imagem (Rolô Blackout Pinpoint + Texturizado)
-
-**Categorias:**
-- Criar duas subcategorias filhas de "Rolô Blackout" (`rolo-blackout`):
-  - `rolo-blackout-pinpoint` — "Rolô Blackout Pinpoint"
-  - `rolo-blackout-texturizado` — "Rolô Blackout Texturizado"
-
-**Imagens (8 fotos premium geradas por IA):** salvar em `src/assets/products/` e fazer upload para o bucket `product-media`. Estilo: foto realista de janela com persiana rolô blackout instalada, ambiente clean, luz natural, cor real do tecido conforme cada produto.
-
-**Produtos (preço por m²):**
-
-| Slug | Nome | Cor | Linha | price_per_sqm |
-|---|---|---|---|---|
-| cortina-rolo-blackout-pinpoint-branca | Cortina Rolô Blackout Pinpoint Branca Sob Medida | Branco | Pinpoint | 264,91 |
-| cortina-rolo-blackout-pinpoint-bege | Cortina Rolô Blackout Pinpoint Bege Sob Medida | Bege | Pinpoint | 365,73 |
-| cortina-rolo-blackout-pinpoint-cinza | Cortina Rolô Blackout Pinpoint Cinza Sob Medida | Cinza | Pinpoint | 379,70 |
-| cortina-rolo-blackout-pinpoint-preta | Cortina Rolô Blackout Pinpoint Preta Sob Medida | Preto | Pinpoint | 378,75 |
-| cortina-rolo-blackout-branca-texturizado | Cortina Rolô Blackout Branca Texturizado | Branco | Texturizado | 393,00 |
-| cortina-rolo-blackout-bege-rustico-texturizado | Cortina Rolô Blackout Bege Rústico Texturizado | Bege | Texturizado | 400,52 |
-| persiana-rolo-blackout-cinza-texturizada | Persiana Rolô Blackout Cinza Texturizada | Cinza | Texturizado | 336,71 |
-| persiana-rolo-blackout-tecido-liso-branca | Persiana Rolô Blackout Tecido Liso Branca | Branco | Liso | 359,44 |
-
-Campos comuns: `product_type='medida'`, `min_width_cm=40`, `max_width_cm=300`, `min_height_cm=40`, `max_height_cm=300`, `min_area=1`, `active=true`, `featured=true` para os 4 Pinpoint, vincular cada um à subcategoria correta via `product_categories`.
-
-## 5. Mega menu — esconder item repetido quando não há netos
-
-Em `src/components/site/CategoryNav.tsx` (linhas 217-243):
-
-- Quando `subGrand.length === 0`, NÃO renderizar a `<ul>` com o `<li>` repetindo `{sub.name}`. O título laranja (header) já é clicável e leva à categoria.
-- Manter a `<ul>` apenas quando existem netos.
-
-Resultado: na imagem 3, "ROLÔ BLACKOUT" aparece só uma vez (laranja, clicável). O mesmo se aplica a Double Vision, Romana etc.
+## Etapa 3 — SEO de alt/filename a partir do admin
+Tool `regenerate_product_alt_text` + ajuste no `ImageUpload` para gravar `alt` ao lado da URL.
+- Schema: adicionar coluna `alt_text` em `product_images` (se ainda não existir) e usar `<img alt={...}>` no front
+- IA gera alt baseado em: nome do produto + categoria + cor/variante
 
 ## Detalhes técnicos
+- Edge function usa AI SDK (`npm:ai`, `npm:@ai-sdk/openai-compatible`) com `streamText` + `tools` + `stopWhen: stepCountIs(50)`
+- Tools com `execute` no servidor — sem `needsApproval` da AI SDK (usamos pattern próprio de confirmação para ficar visual no chat)
+- Cliente: `useChat` do `@ai-sdk/react` + `DefaultChatTransport` apontando para `/functions/v1/admin-ai`
+- Renderiza `message.parts` (text + tool-invocation + tool-result)
+- Auth: envia `Authorization: Bearer <session.access_token>` nas chamadas
 
-- **Imagens IA:** usar `imagegen--generate_image` (modelo `standard`) 1024x1024, prompt template: "Premium product photo, modern bedroom window with [cor] [pinpoint/textured] roller blind blackout shade fully closed, soft natural light from sides, minimalist Scandinavian decor, photorealistic, clean white background outside, professional interior photography, 4k". Salvar em `src/assets/products/rolo-pinpoint-branco.jpg` etc.
-- **Upload para storage:** as fotos vão direto em `src/assets/` e são referenciadas no `cover_image` como URL pública após `supabase.storage.from('product-media').upload(...)`. Como cadastro é one-shot via INSERT, faremos upload via script `code--exec` usando a service-role key não está disponível; alternativa: usar `imagegen--generate_image` com `target_path: src/assets/products/...` e referenciar diretamente como URL relativa não funciona em produção. **Solução adotada:** gerar imagens em `src/assets/products/`, depois usar o tool `supabase--storage_upload` (8 chamadas) para subir cada uma ao bucket `product-media` e obter URL pública, então usar `supabase--insert` para inserir os produtos com a URL pública em `cover_image`.
-- **Migration:** apenas para criar as 2 subcategorias (estrutura nova precisa de INSERT em `categories` — pode ser feito via `supabase--insert`, sem migration).
-- **Operações DB:** 1 INSERT em `categories` (2 linhas), 1 INSERT em `products` (8 linhas), 1 INSERT em `product_categories` (8 linhas). Tudo via `supabase--insert`.
+## O que NÃO entra agora
+- Tela dedicada de "gerenciar imagens em massa" (a IA cobre isso via chat)
+- Refazer toda a UI dos módulos do admin (a IA escreve direto nas tabelas existentes)
+- Histórico/auditoria com UI bonita (fica só o log na tabela, exibimos depois)
 
-## Arquivos alterados
-
-- `src/components/site/QuizMatch.tsx` — Lumini em laranja+bold
-- `src/components/admin/site/QuizModule.tsx` — default da intro sem "Excelente escolha."
-- `src/components/site/PromoStrip.tsx` — marquee fluido com 2 trilhos
-- `src/styles.css` — keyframes/duration responsivos do marquee
-- `src/routes/admin.tsx` — label "Produtos"
-- `src/routes/admin.catalogo.tsx` — heading "Produtos" se aplicável
-- `src/components/site/CategoryNav.tsx` — esconder item repetido
-- `src/assets/products/*.jpg` — 8 imagens novas
-
-## Fora do escopo
-
-- Não vou renomear a rota `/admin/catalogo` para `/admin/produtos` (apenas o label do menu) para não quebrar bookmarks/links existentes.
-- Estoque/SKU dos novos produtos ficam padrão (estoque alto, SKU vazio) — você pode ajustar depois no admin.
+## Após aprovação
+Começo criando a migration (`admin_ai_actions`), depois a edge function `admin-ai` com 3-4 tools de leitura + `update_product` + `update_site_setting` para um MVP funcional, e a rota `/admin/ia`. As demais tools (otimização de imagens, bulk SEO, alt) ficam para o turno seguinte para você validar o pattern antes.
