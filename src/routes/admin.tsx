@@ -21,6 +21,7 @@ import {
   ChevronRight,
   Sparkles,
   Plug,
+  Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -39,6 +40,7 @@ const NAV: NavItem[] = [
   { to: "/admin/lumi", label: "Lumi · IA", icon: Sparkles },
   { to: "/admin/catalogo", label: "Produtos", icon: Package },
   { to: "/admin/categorias", label: "Categorias", icon: Tag },
+  { to: "/admin/imagens", label: "Otimizar imagens", icon: ImageIcon },
   { to: "/admin/site", label: "Site / Conteúdo", icon: Globe },
   { to: "/admin/marketing", label: "Marketing", icon: Megaphone },
   { to: "/admin/producao", label: "Produção", icon: Factory },
