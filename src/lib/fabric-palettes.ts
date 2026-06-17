@@ -23,20 +23,20 @@ export const TEXTURIZADO: FabricColor[] = [
 
 /** Cortina Rolô Blackout — Tecido Liso (Pinpoint). */
 export const PINPOINT: FabricColor[] = [
-  { name: "Branco", hex: "#F2F2EE", swatch: "/fabrics/pin-branco.jpeg" },
-  { name: "Bege", hex: "#E5DDCC", swatch: "/fabrics/pin-bege.jpeg" },
-  { name: "Cinza", hex: "#BFC0BE", swatch: "/fabrics/pin-cinza.jpeg" },
-  { name: "Marrom", hex: "#A39A8C", swatch: "/fabrics/pin-marrom.jpeg" },
-  { name: "Preto", hex: "#33373B", swatch: "/fabrics/pin-preto.jpeg" },
+  { name: "Branco", hex: "#F1ECE0", swatch: "/fabrics/pin-branco.jpeg" },
+  { name: "Bege", hex: "#C9B58E", swatch: "/fabrics/pin-bege.jpeg" },
+  { name: "Cinza", hex: "#A5A5A0", swatch: "/fabrics/pin-cinza.jpeg" },
+  { name: "Marrom", hex: "#6B5A45", swatch: "/fabrics/pin-marrom.jpeg" },
+  { name: "Preto", hex: "#1A1A1A", swatch: "/fabrics/pin-preto.jpeg" },
 ];
 
 /** Tela Solar — todos os modelos (rolô, romana, painel). */
 export const TELA_SOLAR: FabricColor[] = [
-  { name: "Branco", hex: "#EDEDE7", swatch: "/fabrics/pin-branco.jpeg" },
-  { name: "Bege", hex: "#D6C9A9", swatch: "/fabrics/pin-bege.jpeg" },
-  { name: "Cinza", hex: "#9B9C99", swatch: "/fabrics/pin-cinza.jpeg" },
-  { name: "Bronze", hex: "#7A6852", swatch: "/fabrics/pin-marrom.jpeg" },
-  { name: "Grafite", hex: "#3A3D40", swatch: "/fabrics/pin-preto.jpeg" },
+  { name: "Branco", hex: "#E8E4D6", swatch: "/fabrics/pin-branco.jpeg" },
+  { name: "Bege", hex: "#C2AE84", swatch: "/fabrics/pin-bege.jpeg" },
+  { name: "Cinza", hex: "#8C8C88", swatch: "/fabrics/pin-cinza.jpeg" },
+  { name: "Bronze", hex: "#5C4A36", swatch: "/fabrics/pin-marrom.jpeg" },
+  { name: "Grafite", hex: "#2A2D30", swatch: "/fabrics/pin-preto.jpeg" },
 ];
 
 /** União de todas as opções — usada para Vedação Total. */
