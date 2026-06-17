@@ -448,38 +448,53 @@ function RoomSimulatorInner() {
 
             {original && result && (
               <div
-                className="relative select-none overflow-hidden rounded-2xl"
+                className="group relative select-none overflow-hidden rounded-2xl bg-muted"
                 onPointerDown={(e) => {
                   const el = e.currentTarget as HTMLDivElement;
-                  el.setPointerCapture(e.pointerId);
-                  const move = (ev: PointerEvent) => {
+                  const update = (clientX: number) => {
                     const r = el.getBoundingClientRect();
-                    const x = Math.min(Math.max(ev.clientX - r.left, 0), r.width);
+                    const x = Math.min(Math.max(clientX - r.left, 0), r.width);
                     setCompare((x / r.width) * 100);
                   };
+                  el.setPointerCapture(e.pointerId);
+                  update(e.clientX);
+                  const move = (ev: PointerEvent) => update(ev.clientX);
                   const up = () => {
                     el.removeEventListener("pointermove", move);
                     el.removeEventListener("pointerup", up);
+                    el.removeEventListener("pointercancel", up);
                   };
                   el.addEventListener("pointermove", move);
                   el.addEventListener("pointerup", up);
+                  el.addEventListener("pointercancel", up);
                 }}
               >
-                <img src={original} alt="Antes" className="block w-full" draggable={false} />
+                {/* A imagem original define o tamanho/proporção do container */}
+                <img
+                  src={original}
+                  alt="Antes"
+                  className="block w-full h-auto"
+                  draggable={false}
+                />
+                {/* A imagem gerada fica sobreposta no mesmo retângulo, recortada por clip-path */}
+                <img
+                  key={result}
+                  src={result}
+                  alt="Depois com persiana"
+                  className="absolute inset-0 w-full h-full object-cover"
+                  style={{ clipPath: `inset(0 ${100 - compare}% 0 0)` }}
+                  draggable={false}
+                />
+                {loading && (
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/40 backdrop-blur-[2px]">
+                    <div className="flex items-center gap-2 rounded-full bg-background/95 px-4 py-2 shadow-lg">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      <span className="text-xs font-semibold">Aplicando nova cor…</span>
+                    </div>
+                  </div>
+                )}
                 <div
-                  className="absolute inset-0 overflow-hidden"
-                  style={{ width: `${compare}%` }}
-                >
-                  <img
-                    src={result}
-                    alt="Depois com persiana"
-                    className="block h-full w-auto max-w-none"
-                    style={{ width: `${100 / (compare / 100)}%` }}
-                    draggable={false}
-                  />
-                </div>
-                <div
-                  className="absolute top-0 bottom-0 w-0.5 bg-white shadow-[0_0_12px_rgba(0,0,0,0.4)]"
+                  className="pointer-events-none absolute top-0 bottom-0 w-0.5 bg-white shadow-[0_0_12px_rgba(0,0,0,0.45)]"
                   style={{ left: `${compare}%` }}
                 >
                   <div className="absolute top-1/2 left-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-lg">
@@ -492,6 +507,18 @@ function RoomSimulatorInner() {
                 <div className="pointer-events-none absolute top-3 right-3 rounded-full bg-primary px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary-foreground">
                   Depois
                 </div>
+                {/* Slider acessível para arrastar com o dedo/teclado */}
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={compare}
+                  onChange={(e) => setCompare(Number(e.target.value))}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  aria-label="Comparar antes e depois"
+                  className="absolute inset-x-0 bottom-3 mx-auto block w-[85%] cursor-ew-resize accent-primary opacity-0 transition group-hover:opacity-100 focus:opacity-100"
+                />
               </div>
             )}
 
