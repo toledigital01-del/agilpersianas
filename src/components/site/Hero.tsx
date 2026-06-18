@@ -209,24 +209,25 @@ export function HeroIntro() {
   const ctaUrl = cfg.ctaUrl || "#simulador-ambiente";
   const cta2Url = cfg.cta2Url || "/catalogo";
 
-  const handlePrimary = () => {
+  const goTo = (url: string) => {
     if (typeof window === "undefined") return;
-    if (ctaUrl.startsWith("#")) {
-      const el = document.getElementById(ctaUrl.slice(1));
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    } else {
-      window.location.href = ctaUrl;
+    // Legacy/admin value: rewrite "/simulador" -> homepage anchor
+    const normalized = url === "/simulador" ? "/#simulador-ambiente" : url;
+    const hashIdx = normalized.indexOf("#");
+    const path = hashIdx >= 0 ? normalized.slice(0, hashIdx) : normalized;
+    const hash = hashIdx >= 0 ? normalized.slice(hashIdx + 1) : "";
+    const onHome = window.location.pathname === "/" || path === "" || path === "/";
+    if (hash && onHome) {
+      const el = document.getElementById(hash);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
     }
+    window.location.href = normalized;
   };
-  const handleSecondary = () => {
-    if (typeof window === "undefined") return;
-    if (cta2Url.startsWith("#")) {
-      const el = document.getElementById(cta2Url.slice(1));
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    } else {
-      window.location.href = cta2Url;
-    }
-  };
+  const handlePrimary = () => goTo(ctaUrl);
+  const handleSecondary = () => goTo(cta2Url);
 
   const scrollToSim = () => {
     if (typeof window === "undefined") return;

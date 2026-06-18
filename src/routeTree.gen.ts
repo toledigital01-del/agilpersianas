@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ToldosRouteImport } from './routes/toldos'
 import { Route as TelaMosquiteiraRouteImport } from './routes/tela-mosquiteira'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SimuladorRouteImport } from './routes/simulador'
 import { Route as RoloBlackoutTexturizadoRouteImport } from './routes/rolo-blackout-texturizado'
 import { Route as RoloBlackoutPinpointRouteImport } from './routes/rolo-blackout-pinpoint'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
@@ -66,6 +67,11 @@ const TelaMosquiteiraRoute = TelaMosquiteiraRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SimuladorRoute = SimuladorRouteImport.update({
+  id: '/simulador',
+  path: '/simulador',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RoloBlackoutTexturizadoRoute = RoloBlackoutTexturizadoRouteImport.update({
@@ -287,6 +293,7 @@ export interface FileRoutesByFullPath {
   '/robots.txt': typeof RobotsDottxtRoute
   '/rolo-blackout-pinpoint': typeof RoloBlackoutPinpointRoute
   '/rolo-blackout-texturizado': typeof RoloBlackoutTexturizadoRoute
+  '/simulador': typeof SimuladorRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tela-mosquiteira': typeof TelaMosquiteiraRoute
   '/toldos': typeof ToldosRoute
@@ -331,6 +338,7 @@ export interface FileRoutesByTo {
   '/robots.txt': typeof RobotsDottxtRoute
   '/rolo-blackout-pinpoint': typeof RoloBlackoutPinpointRoute
   '/rolo-blackout-texturizado': typeof RoloBlackoutTexturizadoRoute
+  '/simulador': typeof SimuladorRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tela-mosquiteira': typeof TelaMosquiteiraRoute
   '/toldos': typeof ToldosRoute
@@ -377,6 +385,7 @@ export interface FileRoutesById {
   '/robots.txt': typeof RobotsDottxtRoute
   '/rolo-blackout-pinpoint': typeof RoloBlackoutPinpointRoute
   '/rolo-blackout-texturizado': typeof RoloBlackoutTexturizadoRoute
+  '/simulador': typeof SimuladorRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tela-mosquiteira': typeof TelaMosquiteiraRoute
   '/toldos': typeof ToldosRoute
@@ -424,6 +433,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/rolo-blackout-pinpoint'
     | '/rolo-blackout-texturizado'
+    | '/simulador'
     | '/sitemap.xml'
     | '/tela-mosquiteira'
     | '/toldos'
@@ -468,6 +478,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/rolo-blackout-pinpoint'
     | '/rolo-blackout-texturizado'
+    | '/simulador'
     | '/sitemap.xml'
     | '/tela-mosquiteira'
     | '/toldos'
@@ -513,6 +524,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/rolo-blackout-pinpoint'
     | '/rolo-blackout-texturizado'
+    | '/simulador'
     | '/sitemap.xml'
     | '/tela-mosquiteira'
     | '/toldos'
@@ -559,6 +571,7 @@ export interface RootRouteChildren {
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   RoloBlackoutPinpointRoute: typeof RoloBlackoutPinpointRoute
   RoloBlackoutTexturizadoRoute: typeof RoloBlackoutTexturizadoRoute
+  SimuladorRoute: typeof SimuladorRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TelaMosquiteiraRoute: typeof TelaMosquiteiraRoute
   ToldosRoute: typeof ToldosRoute
@@ -590,6 +603,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/simulador': {
+      id: '/simulador'
+      path: '/simulador'
+      fullPath: '/simulador'
+      preLoaderRoute: typeof SimuladorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rolo-blackout-texturizado': {
@@ -937,6 +957,7 @@ const rootRouteChildren: RootRouteChildren = {
   RobotsDottxtRoute: RobotsDottxtRoute,
   RoloBlackoutPinpointRoute: RoloBlackoutPinpointRoute,
   RoloBlackoutTexturizadoRoute: RoloBlackoutTexturizadoRoute,
+  SimuladorRoute: SimuladorRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TelaMosquiteiraRoute: TelaMosquiteiraRoute,
   ToldosRoute: ToldosRoute,
