@@ -82,6 +82,33 @@ async function downscaleImage(dataUrl: string, maxSide = 1280): Promise<string> 
 }
 
 export function RoomSimulator() {
+  // SSR-safe: o simulador depende de catálogo dinâmico e usa <select> nativos
+  // que extensões de browser (ex: "bb-custom-select") reescrevem antes do React
+  // hidratar. Para evitar hydration mismatch, montamos os controles interativos
+  // somente no cliente, após o primeiro paint.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  if (!mounted) {
+    return (
+      <section id="simulador-ambiente" className="relative overflow-hidden py-16 md:py-24">
+        <div className="container-premium">
+          <div className="mx-auto max-w-3xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-primary">
+              Simulador IA
+            </span>
+            <h2 className="mt-4 font-display text-3xl md:text-5xl">Simule na sua janela</h2>
+            <p className="mt-3 text-muted-foreground">Carregando simulador…</p>
+          </div>
+          <div className="mt-10 grid gap-6 md:grid-cols-2">
+            <div className="aspect-[4/3] rounded-3xl bg-muted/40 animate-pulse" />
+            <div className="rounded-3xl bg-muted/40 animate-pulse h-[420px]" />
+          </div>
+        </div>
+      </section>
+    );
+  }
   return <RoomSimulatorInner />;
 }
 
