@@ -589,11 +589,11 @@ function RoomSimulatorInner() {
                     <span className="text-xs font-bold text-primary">↔</span>
                   </div>
                 </div>
-                <div className="pointer-events-none absolute top-3 left-3 rounded-full bg-black/60 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
-                  Antes
-                </div>
-                <div className="pointer-events-none absolute top-3 right-3 rounded-full bg-primary px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary-foreground">
+                <div className="pointer-events-none absolute top-3 left-3 rounded-full bg-primary px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary-foreground">
                   Depois
+                </div>
+                <div className="pointer-events-none absolute top-3 right-3 rounded-full bg-black/60 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
+                  Antes
                 </div>
               </div>
             )}
