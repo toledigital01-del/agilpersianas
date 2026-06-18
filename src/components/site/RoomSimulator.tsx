@@ -349,41 +349,47 @@ function RoomSimulatorInner() {
   // Mantém apenas a última requisição válida.
   const lastReqRef = useRef(0);
   useEffect(() => {
-    if (!result || !original || !product || !color) return;
+    if (!original || !product || !color) return;
     const reqId = ++lastReqRef.current;
     const t = setTimeout(async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase.functions.invoke("simulate-room", {
-          body: {
-            imageDataUrl: original,
-            product: product.prompt,
-            color: color.color,
-            ambient: category?.label,
-          },
-        });
+        const url = await composeSimulation(original, product.cover, color.hex);
         if (reqId !== lastReqRef.current) return;
-        if (error) throw error;
-        const errMsg = (data as { error?: string })?.error;
-        if (errMsg) {
-          toast.error(errMsg);
-          return;
-        }
-        const url = (data as { imageUrl?: string })?.imageUrl;
-        if (url) {
-          setResult(url);
-          setCompare(50);
-        }
+        setResult(url);
+        setCompare(50);
       } catch (e) {
         if (reqId !== lastReqRef.current) return;
         console.error(e);
       } finally {
         if (reqId === lastReqRef.current) setLoading(false);
       }
-    }, 350);
+    }, 200);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorIdx, productId]);
+  }, [colorIdx, productId, original]);
+
+  // Pré-carrega ambiente de demonstração no mount — cliente já vê algo
+  // assim que abre a página, como nos simuladores Bali Blinds / Graber.
+  useEffect(() => {
+    if (original) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const resp = await fetch(DEMO_ROOMS[0].url);
+        const blob = await resp.blob();
+        const raw = await fileToDataUrl(new File([blob], "demo.jpg", { type: blob.type || "image/jpeg" }));
+        const small = await downscaleImage(raw, 1280);
+        if (!cancelled) setOriginal(small);
+      } catch {
+        /* silencioso — usuário ainda pode enviar foto */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleFile(f: File | null) {
     if (!f) return;
@@ -430,25 +436,7 @@ function RoomSimulatorInner() {
     setLoading(true);
     setResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke("simulate-room", {
-        body: {
-          imageDataUrl: original,
-          product: product.prompt,
-          color: color.color,
-          ambient: category?.label,
-        },
-      });
-      if (error) throw error;
-      const errMsg = (data as { error?: string })?.error;
-      if (errMsg) {
-        toast.error(errMsg);
-        return;
-      }
-      const url = (data as { imageUrl?: string })?.imageUrl;
-      if (!url) {
-        toast.error("A IA não retornou imagem. Tente outra foto.");
-        return;
-      }
+      const url = await composeSimulation(original, product.cover, color.hex);
       setResult(url);
       setCompare(50);
       toast.success("Simulação pronta!");
