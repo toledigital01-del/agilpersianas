@@ -25,6 +25,7 @@ import { Route as PersianaJuizDeForaRouteImport } from './routes/persiana-juiz-d
 import { Route as PersianaHorizontalRouteImport } from './routes/persiana-horizontal'
 import { Route as PersianaDoubleVisionRouteImport } from './routes/persiana-double-vision'
 import { Route as PersianaBeloHorizonteRouteImport } from './routes/persiana-belo-horizonte'
+import { Route as FaqRouteImport } from './routes/faq'
 import { Route as CortinaRomanaRouteImport } from './routes/cortina-romana'
 import { Route as CatalogoRouteImport } from './routes/catalogo'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -132,6 +133,11 @@ const PersianaDoubleVisionRoute = PersianaDoubleVisionRouteImport.update({
 const PersianaBeloHorizonteRoute = PersianaBeloHorizonteRouteImport.update({
   id: '/persiana-belo-horizonte',
   path: '/persiana-belo-horizonte',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CortinaRomanaRoute = CortinaRomanaRouteImport.update({
@@ -281,6 +287,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/catalogo': typeof CatalogoRoute
   '/cortina-romana': typeof CortinaRomanaRoute
+  '/faq': typeof FaqRoute
   '/persiana-belo-horizonte': typeof PersianaBeloHorizonteRoute
   '/persiana-double-vision': typeof PersianaDoubleVisionRoute
   '/persiana-horizontal': typeof PersianaHorizontalRoute
@@ -326,6 +333,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/catalogo': typeof CatalogoRoute
   '/cortina-romana': typeof CortinaRomanaRoute
+  '/faq': typeof FaqRoute
   '/persiana-belo-horizonte': typeof PersianaBeloHorizonteRoute
   '/persiana-double-vision': typeof PersianaDoubleVisionRoute
   '/persiana-horizontal': typeof PersianaHorizontalRoute
@@ -373,6 +381,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/catalogo': typeof CatalogoRoute
   '/cortina-romana': typeof CortinaRomanaRoute
+  '/faq': typeof FaqRoute
   '/persiana-belo-horizonte': typeof PersianaBeloHorizonteRoute
   '/persiana-double-vision': typeof PersianaDoubleVisionRoute
   '/persiana-horizontal': typeof PersianaHorizontalRoute
@@ -421,6 +430,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/catalogo'
     | '/cortina-romana'
+    | '/faq'
     | '/persiana-belo-horizonte'
     | '/persiana-double-vision'
     | '/persiana-horizontal'
@@ -466,6 +476,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/catalogo'
     | '/cortina-romana'
+    | '/faq'
     | '/persiana-belo-horizonte'
     | '/persiana-double-vision'
     | '/persiana-horizontal'
@@ -512,6 +523,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/catalogo'
     | '/cortina-romana'
+    | '/faq'
     | '/persiana-belo-horizonte'
     | '/persiana-double-vision'
     | '/persiana-horizontal'
@@ -559,6 +571,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CatalogoRoute: typeof CatalogoRoute
   CortinaRomanaRoute: typeof CortinaRomanaRoute
+  FaqRoute: typeof FaqRoute
   PersianaBeloHorizonteRoute: typeof PersianaBeloHorizonteRoute
   PersianaDoubleVisionRoute: typeof PersianaDoubleVisionRoute
   PersianaHorizontalRoute: typeof PersianaHorizontalRoute
@@ -694,6 +707,13 @@ declare module '@tanstack/react-router' {
       path: '/persiana-belo-horizonte'
       fullPath: '/persiana-belo-horizonte'
       preLoaderRoute: typeof PersianaBeloHorizonteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cortina-romana': {
@@ -945,6 +965,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CatalogoRoute: CatalogoRoute,
   CortinaRomanaRoute: CortinaRomanaRoute,
+  FaqRoute: FaqRoute,
   PersianaBeloHorizonteRoute: PersianaBeloHorizonteRoute,
   PersianaDoubleVisionRoute: PersianaDoubleVisionRoute,
   PersianaHorizontalRoute: PersianaHorizontalRoute,
