@@ -568,16 +568,16 @@ function RoomSimulatorInner() {
                   el.addEventListener("pointerup", up);
                 }}
               >
-                <img src={original} alt="Antes" className="block w-full" draggable={false} />
+                <img src={result} alt="Depois com persiana" className="block w-full" draggable={false} />
                 <div
-                  className="absolute inset-0 overflow-hidden"
-                  style={{ width: `${compare}%` }}
+                  className="absolute top-0 right-0 h-full overflow-hidden"
+                  style={{ width: `${100 - compare}%` }}
                 >
                   <img
-                    src={result}
-                    alt="Depois com persiana"
-                    className="block h-full w-auto max-w-none"
-                    style={{ width: `${100 / (compare / 100)}%` }}
+                    src={original}
+                    alt="Antes"
+                    className="block h-full max-w-none"
+                    style={{ width: `${100 / ((100 - compare) / 100)}%` }}
                     draggable={false}
                   />
                 </div>
