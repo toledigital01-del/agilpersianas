@@ -81,6 +81,94 @@ async function downscaleImage(dataUrl: string, maxSide = 1280): Promise<string> 
   });
 }
 
+function loadImage(src: string, crossOrigin?: string): Promise<HTMLImageElement> {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    if (crossOrigin) img.crossOrigin = crossOrigin;
+    img.onload = () => res(img);
+    img.onerror = rej;
+    img.src = src;
+  });
+}
+
+/** Compositor client-side: desenha a persiana (foto real do produto) sobre a
+ *  área típica de janela do ambiente e aplica tinta da cor escolhida.
+ *  Não depende de IA externa — resultado instantâneo e previsível. */
+async function composeSimulation(
+  originalUrl: string,
+  productCoverUrl: string,
+  colorHex: string,
+): Promise<string> {
+  const base = await loadImage(originalUrl);
+  let overlay: HTMLImageElement | null = null;
+  try {
+    overlay = await loadImage(productCoverUrl, "anonymous");
+  } catch {
+    try {
+      overlay = await loadImage(productCoverUrl);
+    } catch {
+      overlay = null;
+    }
+  }
+
+  const c = document.createElement("canvas");
+  c.width = base.naturalWidth;
+  c.height = base.naturalHeight;
+  const ctx = c.getContext("2d");
+  if (!ctx) throw new Error("canvas context");
+  ctx.drawImage(base, 0, 0, c.width, c.height);
+
+  const x = c.width * 0.15;
+  const y = 0;
+  const w = c.width * 0.7;
+  const h = c.height * 0.55;
+
+  if (overlay) {
+    try {
+      ctx.save();
+      ctx.globalAlpha = 0.92;
+      ctx.drawImage(overlay, x, y, w, h);
+      ctx.restore();
+    } catch {
+      // overlay tainted — pula textura, mantém tinta
+    }
+  }
+
+  ctx.save();
+  ctx.globalCompositeOperation = "multiply";
+  ctx.globalAlpha = 0.45;
+  ctx.fillStyle = colorHex;
+  ctx.fillRect(x, y, w, h);
+  ctx.restore();
+
+  ctx.globalCompositeOperation = "source-over";
+  ctx.globalAlpha = 1;
+
+  // Borda superior sutil (varão)
+  ctx.save();
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  ctx.fillRect(x, y, w, Math.max(4, c.height * 0.012));
+  ctx.restore();
+
+  try {
+    return c.toDataURL("image/jpeg", 0.88);
+  } catch {
+    // Canvas tainted pelo overlay cross-origin — repete sem o overlay
+    const c2 = document.createElement("canvas");
+    c2.width = c.width;
+    c2.height = c.height;
+    const ctx2 = c2.getContext("2d")!;
+    ctx2.drawImage(base, 0, 0, c2.width, c2.height);
+    ctx2.save();
+    ctx2.globalCompositeOperation = "multiply";
+    ctx2.globalAlpha = 0.5;
+    ctx2.fillStyle = colorHex;
+    ctx2.fillRect(x, y, w, h);
+    ctx2.restore();
+    return c2.toDataURL("image/jpeg", 0.88);
+  }
+}
+
 export function RoomSimulator() {
   // SSR-safe: o simulador depende de catálogo dinâmico e usa <select> nativos
   // que extensões de browser (ex: "bb-custom-select") reescrevem antes do React
