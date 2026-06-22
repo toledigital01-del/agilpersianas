@@ -243,76 +243,92 @@ function RoomSimulatorInner() {
         ]);
         if (cancelled) return;
 
-        const catById = new Map<string, { id: string; name: string; slug: string; parent_id: string | null; position: number }>();
+        type CatRow = { id: string; name: string; slug: string; parent_id: string | null; position: number };
+        const catById = new Map<string, CatRow>();
         (cats ?? []).forEach((c: any) => catById.set(c.id, c));
-        const rootOf = (id: string | null | undefined): { id: string; name: string; slug: string; position: number } | null => {
-          let cur = id ? catById.get(id) : null;
+        const rootOf = (id: string | null | undefined): CatRow | null => {
+          let cur = id ? catById.get(id) ?? null : null;
           while (cur && cur.parent_id) cur = catById.get(cur.parent_id) ?? null;
-          return cur ? { id: cur.id, name: cur.name, slug: cur.slug, position: cur.position } : null;
+          return cur ?? null;
         };
 
-        // map product -> set of root categories
-        const productRoots = new Map<string, Set<string>>();
-        const addRoot = (pid: string, catId: string | null | undefined) => {
-          const r = rootOf(catId ?? null);
-          if (!r) return;
-          if (!productRoots.has(pid)) productRoots.set(pid, new Set());
-          productRoots.get(pid)!.add(r.id);
+        // product → categorias (direct + product_categories)
+        const productCats = new Map<string, Set<string>>();
+        const add = (pid: string, cid: string | null | undefined) => {
+          if (!pid || !cid) return;
+          if (!productCats.has(pid)) productCats.set(pid, new Set());
+          productCats.get(pid)!.add(cid);
         };
-        (prods ?? []).forEach((p: any) => addRoot(p.id, p.category_id));
-        (links ?? []).forEach((l: any) => addRoot(l.product_id, l.category_id));
+        (prods ?? []).forEach((p: any) => add(p.id, p.category_id));
+        (links ?? []).forEach((l: any) => add(l.product_id, l.category_id));
+
+        // Agrupa produtos por categoria-folha (= modelo).
+        // Ex.: "Rolô Blackout Tecido Liso", "Rolô Blackout Texturizado",
+        // "Double Vision Translúcida"… Cada modelo vira UMA opção no
+        // simulador, evitando duplicar entradas só por cor.
+        const modelGroups = new Map<string, { cat: CatRow; covers: string[]; sample: any }>();
+        for (const p of prods ?? []) {
+          const cover = p.cover_image as string | null;
+          if (!cover) continue;
+          const catIds = Array.from(productCats.get(p.id) ?? []);
+          for (const cid of catIds) {
+            const cat = catById.get(cid);
+            if (!cat) continue;
+            // Ignora categorias "ambientes" (não são modelos de persiana).
+            const root = rootOf(cat.id);
+            if (root && root.slug === "ambientes") continue;
+            const g = modelGroups.get(cat.id);
+            if (g) {
+              g.covers.push(cover);
+            } else {
+              modelGroups.set(cat.id, { cat, covers: [cover], sample: p });
+            }
+          }
+        }
 
         const rootMap = new Map<string, CategoryOpt & { position: number }>();
         const products: Product[] = [];
 
-        for (const p of prods ?? []) {
-          const roots = Array.from(productRoots.get(p.id) ?? []);
-          if (roots.length === 0) continue;
-          const cover = p.cover_image as string | null;
-          if (!cover) continue;
-          const colorsRaw: any[] = Array.isArray(p.colors) ? p.colors : [];
-          // 1) Paleta curada por modelo (texturizado, pinpoint, tela solar, vedação)
-          const curated = paletteFor(p.name as string, (p.short_description as string) ?? "");
-          let thumbs: ColorOpt[] = curated
-            ? curated.map((c: FabricColor) => ({
-                color: c.name,
-                hex: c.hex,
-                img: cover,
-                swatch: c.swatch,
-              }))
-            : colorsRaw
-            .filter((c) => c && (c.name || c.color))
-            .map((c: any) => ({
-              color: String(c.name ?? c.color),
-              hex: typeof c.hex === "string" && c.hex ? c.hex : guessHex(String(c.name ?? c.color)),
-              img: typeof c.img === "string" && c.img ? c.img : cover,
-            }));
-          if (thumbs.length === 0) {
-            // Fallback final: paleta neutra padrão (5 cores) para garantir escolha real ao cliente.
-            thumbs = DEFAULT_NEUTRAL_PALETTE.map((c) => ({ color: c.name, hex: c.hex, img: cover }));
-          }
-          // Use the first root category as primary grouping
-          const primaryRoot = catById.get(roots[0])!;
-          const rootInfo = rootOf(primaryRoot.id)!;
-          if (!rootMap.has(rootInfo.id)) {
-            rootMap.set(rootInfo.id, {
-              id: rootInfo.id,
-              label: toTitle(rootInfo.name),
-              hint: "Sob medida · instalação realista por IA",
-              position: rootInfo.position,
+        for (const { cat, covers, sample } of modelGroups.values()) {
+          const root = rootOf(cat.id) ?? cat;
+          // Quando a categoria-folha é também raiz (ex.: "Rolô Blackout
+          // Tecido Liso" sem parent), agrupa sob ela mesma.
+          if (!rootMap.has(root.id)) {
+            rootMap.set(root.id, {
+              id: root.id,
+              label: toTitle(root.name),
+              hint: "Sob medida · simulação realista",
+              position: root.position,
             });
           }
+          const cover = covers[0];
+          const curated = paletteFor(cat.name, (sample?.short_description as string) ?? "");
+          const colorsRaw: any[] = Array.isArray(sample?.colors) ? sample.colors : [];
+          let thumbs: ColorOpt[] = curated
+            ? curated.map((c: FabricColor) => ({ color: c.name, hex: c.hex, img: cover, swatch: c.swatch }))
+            : colorsRaw
+                .filter((c) => c && (c.name || c.color))
+                .map((c: any) => ({
+                  color: String(c.name ?? c.color),
+                  hex: typeof c.hex === "string" && c.hex ? c.hex : guessHex(String(c.name ?? c.color)),
+                  img: typeof c.img === "string" && c.img ? c.img : cover,
+                }));
+          if (thumbs.length === 0) {
+            thumbs = DEFAULT_NEUTRAL_PALETTE.map((c) => ({ color: c.name, hex: c.hex, img: cover }));
+          }
           products.push({
-            id: p.id,
-            name: p.name,
-            description: p.short_description || (p.description ? String(p.description).slice(0, 140) : ""),
-            prompt: `${p.name}, instalada no topo da janela, tecido com caimento natural`,
-            href: `/produto/${p.slug}`,
+            id: cat.id,
+            name: toTitle(cat.name),
+            description: `Modelo ${toTitle(cat.name)} sob medida`,
+            prompt: `${cat.name}, instalada no topo da janela, tecido com caimento natural`,
+            href: `/catalogo?categoria=${cat.slug}`,
             cover,
-            category: rootInfo.id,
+            category: root.id,
             thumbs,
           });
         }
+
+        products.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
 
         const categories = Array.from(rootMap.values())
           .sort((a, b) => a.position - b.position)
