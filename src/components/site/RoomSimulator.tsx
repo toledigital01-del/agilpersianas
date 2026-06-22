@@ -345,29 +345,17 @@ function RoomSimulatorInner() {
   const color = product?.thumbs[Math.min(colorIdx, (product?.thumbs.length ?? 1) - 1)];
   const category = catalog.categories.find((c) => c.id === categoryId);
 
-  // Auto-regenera quando o cliente troca a cor após já existir uma simulação.
-  // Mantém apenas a última requisição válida.
-  const lastReqRef = useRef(0);
+  // A simulação por IA é cara — só roda quando o cliente clica em "Simular".
+  // Trocar de cor/produto após a primeira geração limpa o resultado para
+  // sinalizar que é preciso clicar de novo.
+  const firstRunRef = useRef(true);
   useEffect(() => {
-    if (!original || !product || !color) return;
-    const reqId = ++lastReqRef.current;
-    const t = setTimeout(async () => {
-      setLoading(true);
-      try {
-        const url = await composeSimulation(original, product.cover, color.hex);
-        if (reqId !== lastReqRef.current) return;
-        setResult(url);
-        setCompare(50);
-      } catch (e) {
-        if (reqId !== lastReqRef.current) return;
-        console.error(e);
-      } finally {
-        if (reqId === lastReqRef.current) setLoading(false);
-      }
-    }, 200);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorIdx, productId, original]);
+    if (firstRunRef.current) {
+      firstRunRef.current = false;
+      return;
+    }
+    setResult(null);
+  }, [productId, colorIdx, original]);
 
   // Pré-carrega ambiente de demonstração no mount — cliente já vê algo
   // assim que abre a página, como nos simuladores Bali Blinds / Graber.
@@ -436,13 +424,39 @@ function RoomSimulatorInner() {
     setLoading(true);
     setResult(null);
     try {
-      const url = await composeSimulation(original, product.cover, color.hex);
-      setResult(url);
-      setCompare(50);
-      toast.success("Simulação pronta!");
+      const { data, error } = await supabase.functions.invoke("simulate-room", {
+        body: {
+          imageDataUrl: original,
+          product: product.name,
+          color: color.color,
+          ambient: category?.label ?? "",
+        },
+      });
+      if (error) throw error;
+      if (data?.imageUrl) {
+        setResult(data.imageUrl);
+        setCompare(50);
+        toast.success("Simulação pronta!");
+      } else if (data?.error) {
+        // Edge function devolveu erro tratado (rate limit, sem créditos, etc).
+        toast.error(data.error);
+        // Fallback: compositor canvas para o cliente não ficar sem prévia.
+        const url = await composeSimulation(original, product.cover, color.hex);
+        setResult(url);
+        setCompare(50);
+      } else {
+        throw new Error("Sem resposta da IA");
+      }
     } catch (e) {
       console.error(e);
-      toast.error(e instanceof Error ? e.message : "Erro ao gerar simulação");
+      try {
+        const url = await composeSimulation(original, product.cover, color.hex);
+        setResult(url);
+        setCompare(50);
+        toast.message("Mostrando prévia rápida (IA indisponível agora).");
+      } catch {
+        toast.error(e instanceof Error ? e.message : "Erro ao gerar simulação");
+      }
     } finally {
       setLoading(false);
     }
