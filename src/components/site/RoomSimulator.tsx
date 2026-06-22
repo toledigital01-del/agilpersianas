@@ -564,50 +564,10 @@ function RoomSimulatorInner() {
             )}
 
             {original && result && (
-              <div
-                className="relative select-none overflow-hidden rounded-2xl"
-                onPointerDown={(e) => {
-                  const el = e.currentTarget as HTMLDivElement;
-                  el.setPointerCapture(e.pointerId);
-                  const move = (ev: PointerEvent) => {
-                    const r = el.getBoundingClientRect();
-                    const x = Math.min(Math.max(ev.clientX - r.left, 0), r.width);
-                    setCompare((x / r.width) * 100);
-                  };
-                  const up = () => {
-                    el.removeEventListener("pointermove", move);
-                    el.removeEventListener("pointerup", up);
-                  };
-                  el.addEventListener("pointermove", move);
-                  el.addEventListener("pointerup", up);
-                }}
-              >
-                <img src={result} alt="Depois com persiana" className="block w-full" draggable={false} />
-                <div
-                  className="absolute top-0 right-0 h-full overflow-hidden"
-                  style={{ width: `${100 - compare}%` }}
-                >
-                  <img
-                    src={original}
-                    alt="Antes"
-                    className="block h-full max-w-none"
-                    style={{ width: `${100 / ((100 - compare) / 100)}%` }}
-                    draggable={false}
-                  />
-                </div>
-                <div
-                  className="absolute top-0 bottom-0 w-0.5 bg-white shadow-[0_0_12px_rgba(0,0,0,0.4)]"
-                  style={{ left: `${compare}%` }}
-                >
-                  <div className="absolute top-1/2 left-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-lg">
-                    <span className="text-xs font-bold text-primary">↔</span>
-                  </div>
-                </div>
+              <div className="relative overflow-hidden rounded-2xl">
+                <img src={result} alt="Ambiente com a persiana instalada" className="block w-full" draggable={false} />
                 <div className="pointer-events-none absolute top-3 left-3 rounded-full bg-primary px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary-foreground">
-                  Depois
-                </div>
-                <div className="pointer-events-none absolute top-3 right-3 rounded-full bg-black/60 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
-                  Antes
+                  Resultado
                 </div>
               </div>
             )}
