@@ -192,12 +192,6 @@ export function CheckoutDialog({
       });
       if (couponDiscount > 0 && email) registerCouponUsage(email, order.id).catch(() => {});
       setStage("success");
-      // Abre a página de checkout hospedada do Asaas em nova aba.
-      // Se o navegador bloquear o popup, o usuário ainda tem o QR/botão no modal.
-      if (charge.invoiceUrl) {
-        const win = window.open(charge.invoiceUrl, "_blank", "noopener,noreferrer");
-        if (!win) toast.message("Permita popups para abrir a página de pagamento automaticamente.");
-      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro inesperado");
       setStage("form");
