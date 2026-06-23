@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Dialog,
@@ -92,6 +92,9 @@ export function CheckoutDialog({
   const [cep, setCep] = useState("");
   const [shipping, setShipping] = useState<ShippingQuote | null>(initialShipping ?? null);
   const [result, setResult] = useState<ChargeResult | null>(null);
+  const [iframeBlocked, setIframeBlocked] = useState(false);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+  const iframeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [couponCode, setCouponCode] = useState("");
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponLoading, setCouponLoading] = useState(false);
@@ -133,6 +136,9 @@ export function CheckoutDialog({
     setStage("form");
     setStepIdx(0);
     setResult(null);
+    setIframeBlocked(false);
+    setIframeLoaded(false);
+    if (iframeTimer.current) clearTimeout(iframeTimer.current);
   }
 
   async function submitCharge() {
