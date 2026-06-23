@@ -247,7 +247,7 @@ export function CheckoutDialog({
         if (!v) setTimeout(reset, 200);
       }}
     >
-      <DialogContent className="max-w-4xl max-h-[92vh] overflow-hidden p-0 gap-0">
+      <DialogContent className="max-w-5xl w-[95vw] max-h-[92vh] overflow-hidden p-0 gap-0">
         {stage === "form" && (
           <div className="grid md:grid-cols-[1fr_360px] max-h-[92vh]">
             {/* MAIN */}
