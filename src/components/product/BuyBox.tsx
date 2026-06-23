@@ -59,8 +59,8 @@ export function BuyBox({
   const [side, setSide] = useState<Side>("right");
   const [motor, setMotor] = useState<Motor>("manual");
   const [bando, setBando] = useState(false);
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [shipping, setShipping] = useState<ShippingQuote | null>(null);
+  const navigate = useNavigate();
 
   const productColors = useMemo(() => {
     if (Array.isArray(product.colors) && product.colors.length > 0) {
