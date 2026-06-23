@@ -13,12 +13,12 @@ import {
 import { Star, Truck, Ruler, MessageCircle, ChevronRight, Wrench, Sparkles, ShieldCheck } from "lucide-react";
 import type { Product } from "@/routes/produto.$slug";
 import { toast } from "sonner";
-import { CheckoutDialog } from "./CheckoutDialog";
 import { ShippingCalculator } from "./ShippingCalculator";
 import type { ShippingQuote } from "@/lib/frenet.functions";
 import { loadSelection, saveSelection } from "@/lib/product-selection";
 import { openLumiWith } from "@/components/site/LumiWidget";
 import { HowToMeasureDialog } from "./HowToMeasureDialog";
+import type { CheckoutPayload } from "@/routes/checkout";
 import {
   CordLeft, CordRight, NoBando, WithBando,
   HandManual, MotorRf, MotorWifi, MountInside, MountOutside,
