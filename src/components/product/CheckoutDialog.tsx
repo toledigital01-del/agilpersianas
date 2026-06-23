@@ -222,6 +222,23 @@ export function CheckoutDialog({
     toast.success("Código PIX copiado!");
   }
 
+  // Detect X-Frame-Options block: if iframe never fires onLoad in 5s, treat as blocked.
+  useEffect(() => {
+    if (stage !== "success" || !result?.invoiceUrl) return;
+    setIframeLoaded(false);
+    setIframeBlocked(false);
+    if (iframeTimer.current) clearTimeout(iframeTimer.current);
+    iframeTimer.current = setTimeout(() => {
+      setIframeLoaded((loaded) => {
+        if (!loaded) setIframeBlocked(true);
+        return loaded;
+      });
+    }, 5000);
+    return () => {
+      if (iframeTimer.current) clearTimeout(iframeTimer.current);
+    };
+  }, [stage, result?.invoiceUrl]);
+
   return (
     <Dialog
       open={open}
