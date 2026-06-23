@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -12,12 +13,12 @@ import {
 import { Star, Truck, Ruler, MessageCircle, ChevronRight, Wrench, Sparkles, ShieldCheck } from "lucide-react";
 import type { Product } from "@/routes/produto.$slug";
 import { toast } from "sonner";
-import { CheckoutDialog } from "./CheckoutDialog";
 import { ShippingCalculator } from "./ShippingCalculator";
 import type { ShippingQuote } from "@/lib/frenet.functions";
 import { loadSelection, saveSelection } from "@/lib/product-selection";
 import { openLumiWith } from "@/components/site/LumiWidget";
 import { HowToMeasureDialog } from "./HowToMeasureDialog";
+import type { CheckoutPayload } from "@/routes/checkout";
 import {
   CordLeft, CordRight, NoBando, WithBando,
   HandManual, MotorRf, MotorWifi, MountInside, MountOutside,
@@ -58,8 +59,8 @@ export function BuyBox({
   const [side, setSide] = useState<Side>("right");
   const [motor, setMotor] = useState<Motor>("manual");
   const [bando, setBando] = useState(false);
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [shipping, setShipping] = useState<ShippingQuote | null>(null);
+  const navigate = useNavigate();
 
   const productColors = useMemo(() => {
     if (Array.isArray(product.colors) && product.colors.length > 0) {
@@ -171,7 +172,25 @@ export function BuyBox({
       toast.error(validation[0]);
       return;
     }
-    setCheckoutOpen(true);
+    const payload: CheckoutPayload = {
+      productId: product.id,
+      productName: product.name,
+      productSlug: product.slug,
+      productImage: product.cover_image ?? null,
+      widthCm: width,
+      heightCm: height,
+      motor,
+      color,
+      bando,
+      unitPrice: product.price_per_sqm,
+      subtotal,
+    };
+    try {
+      sessionStorage.setItem("agil:checkout-payload", JSON.stringify(payload));
+    } catch {
+      // ignore quota errors
+    }
+    navigate({ to: "/checkout" });
   }
 
   function handleWhats() {
@@ -474,23 +493,6 @@ export function BuyBox({
         </div>
       </div>
 
-      <CheckoutDialog
-        open={checkoutOpen}
-        onOpenChange={setCheckoutOpen}
-        total={total}
-        subtotal={subtotal}
-        shipping={shipping}
-        item={{
-          productId: product.id,
-          productName: product.name,
-          widthCm: width,
-          heightCm: height,
-          motor,
-          color,
-          bando,
-          unitPrice: product.price_per_sqm,
-        }}
-      />
     </div>
   );
 }
