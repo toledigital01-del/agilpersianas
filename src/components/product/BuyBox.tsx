@@ -172,7 +172,25 @@ export function BuyBox({
       toast.error(validation[0]);
       return;
     }
-    setCheckoutOpen(true);
+    const payload: CheckoutPayload = {
+      productId: product.id,
+      productName: product.name,
+      productSlug: product.slug,
+      productImage: product.cover_image ?? null,
+      widthCm: width,
+      heightCm: height,
+      motor,
+      color,
+      bando,
+      unitPrice: product.price_per_sqm,
+      subtotal,
+    };
+    try {
+      sessionStorage.setItem("agil:checkout-payload", JSON.stringify(payload));
+    } catch {
+      // ignore quota errors
+    }
+    navigate({ to: "/checkout" });
   }
 
   function handleWhats() {
@@ -475,23 +493,6 @@ export function BuyBox({
         </div>
       </div>
 
-      <CheckoutDialog
-        open={checkoutOpen}
-        onOpenChange={setCheckoutOpen}
-        total={total}
-        subtotal={subtotal}
-        shipping={shipping}
-        item={{
-          productId: product.id,
-          productName: product.name,
-          widthCm: width,
-          heightCm: height,
-          motor,
-          color,
-          bando,
-          unitPrice: product.price_per_sqm,
-        }}
-      />
     </div>
   );
 }
