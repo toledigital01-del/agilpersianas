@@ -470,45 +470,93 @@ export function CheckoutDialog({
         )}
 
         {stage === "success" && result && (
-          <div className="p-8 max-w-md mx-auto space-y-4">
-            <div className="text-center">
-              <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-success/10 mb-3">
-                <CheckCircle2 className="h-8 w-8 text-success" />
+          <div className="flex flex-col max-h-[92vh]">
+            <div className="flex items-center justify-between px-6 py-3 border-b bg-card">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-success" />
+                <div>
+                  <div className="font-semibold text-sm">Pedido criado — finalize o pagamento</div>
+                  <div className="text-[11px] text-muted-foreground">Confirmamos automaticamente assim que o pagamento cair.</div>
+                </div>
               </div>
-              <h3 className="font-display text-2xl">Pedido criado!</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Conclua o pagamento abaixo — confirmamos automaticamente assim que cair.
-              </p>
+              <button onClick={() => onOpenChange(false)} className="text-muted-foreground hover:text-foreground p-1">
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
-            {result.billingType === "PIX" && result.pixQrCode && (
-              <div className="space-y-3">
-                <div className="flex justify-center">
-                  <img src={result.pixQrCode} alt="QR Code PIX" className="h-56 w-56 rounded-lg border bg-white p-2" />
-                </div>
-                {result.pixPayload && (
-                  <div>
-                    <Label className="text-xs">Pix Copia e Cola</Label>
-                    <div className="flex gap-2 mt-1">
-                      <Input readOnly value={result.pixPayload} className="text-xs font-mono" />
-                      <Button type="button" variant="outline" onClick={copyPix}>
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
+            {!iframeBlocked ? (
+              <div className="relative flex-1 bg-muted/30" style={{ minHeight: "70vh" }}>
+                {!iframeLoaded && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-muted-foreground">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <p className="text-sm">Carregando ambiente de pagamento seguro…</p>
                   </div>
                 )}
+                <iframe
+                  src={result.invoiceUrl}
+                  title="Checkout Asaas"
+                  className="w-full h-full border-0"
+                  style={{ minHeight: "70vh" }}
+                  onLoad={() => {
+                    setIframeLoaded(true);
+                    if (iframeTimer.current) clearTimeout(iframeTimer.current);
+                  }}
+                  allow="payment *"
+                />
+                <div className="flex items-center justify-between gap-2 px-6 py-2 border-t bg-card text-[11px] text-muted-foreground">
+                  <span className="inline-flex items-center gap-1"><Lock className="h-3 w-3" /> Pagamento processado em ambiente seguro Asaas</span>
+                  <div className="flex gap-2">
+                    {result.billingType === "PIX" && result.pixQrCode && (
+                      <Button size="sm" variant="ghost" onClick={() => setIframeBlocked(true)}>
+                        <QrCode className="h-3.5 w-3.5" /> Usar QR Code
+                      </Button>
+                    )}
+                    <Button size="sm" variant="outline" asChild>
+                      <a href={result.invoiceUrl} target="_blank" rel="noopener">
+                        <ExternalLink className="h-3.5 w-3.5" /> Abrir em nova aba
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-8 max-w-md mx-auto space-y-4 overflow-y-auto">
+                {result.billingType === "PIX" && result.pixQrCode ? (
+                  <>
+                    <p className="text-sm text-center text-muted-foreground">
+                      Use o QR Code abaixo ou o código copia-e-cola no seu app bancário.
+                    </p>
+                    <div className="flex justify-center">
+                      <img src={result.pixQrCode} alt="QR Code PIX" className="h-56 w-56 rounded-lg border bg-white p-2" />
+                    </div>
+                    {result.pixPayload && (
+                      <div>
+                        <Label className="text-xs">Pix Copia e Cola</Label>
+                        <div className="flex gap-2 mt-1">
+                          <Input readOnly value={result.pixPayload} className="text-xs font-mono" />
+                          <Button type="button" variant="outline" onClick={copyPix}>
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-center text-muted-foreground">
+                    Não foi possível embutir a página de pagamento. Use o botão abaixo para abrir.
+                  </p>
+                )}
+                <Button asChild size="lg" className="w-full">
+                  <a href={result.invoiceUrl} target="_blank" rel="noopener">
+                    <ExternalLink className="h-4 w-4" />
+                    {result.billingType === "BOLETO" ? "Visualizar boleto"
+                      : result.billingType === "CREDIT_CARD" ? "Pagar com cartão"
+                      : "Ver fatura completa"}
+                  </a>
+                </Button>
+                <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full">Fechar</Button>
               </div>
             )}
-
-            <Button asChild size="lg" className="w-full">
-              <a href={result.invoiceUrl} target="_blank" rel="noopener">
-                <ExternalLink className="h-4 w-4" />
-                {result.billingType === "BOLETO" ? "Visualizar boleto"
-                  : result.billingType === "CREDIT_CARD" ? "Pagar com cartão"
-                  : "Ver fatura completa"}
-              </a>
-            </Button>
-            <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full">Fechar</Button>
           </div>
         )}
       </DialogContent>
