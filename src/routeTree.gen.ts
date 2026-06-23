@@ -27,6 +27,7 @@ import { Route as PersianaDoubleVisionRouteImport } from './routes/persiana-doub
 import { Route as PersianaBeloHorizonteRouteImport } from './routes/persiana-belo-horizonte'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as CortinaRomanaRouteImport } from './routes/cortina-romana'
+import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CatalogoRouteImport } from './routes/catalogo'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -143,6 +144,11 @@ const FaqRoute = FaqRouteImport.update({
 const CortinaRomanaRoute = CortinaRomanaRouteImport.update({
   id: '/cortina-romana',
   path: '/cortina-romana',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CatalogoRoute = CatalogoRouteImport.update({
@@ -286,6 +292,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/catalogo': typeof CatalogoRoute
+  '/checkout': typeof CheckoutRoute
   '/cortina-romana': typeof CortinaRomanaRoute
   '/faq': typeof FaqRoute
   '/persiana-belo-horizonte': typeof PersianaBeloHorizonteRoute
@@ -332,6 +339,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/catalogo': typeof CatalogoRoute
+  '/checkout': typeof CheckoutRoute
   '/cortina-romana': typeof CortinaRomanaRoute
   '/faq': typeof FaqRoute
   '/persiana-belo-horizonte': typeof PersianaBeloHorizonteRoute
@@ -380,6 +388,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/catalogo': typeof CatalogoRoute
+  '/checkout': typeof CheckoutRoute
   '/cortina-romana': typeof CortinaRomanaRoute
   '/faq': typeof FaqRoute
   '/persiana-belo-horizonte': typeof PersianaBeloHorizonteRoute
@@ -429,6 +438,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/catalogo'
+    | '/checkout'
     | '/cortina-romana'
     | '/faq'
     | '/persiana-belo-horizonte'
@@ -475,6 +485,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/catalogo'
+    | '/checkout'
     | '/cortina-romana'
     | '/faq'
     | '/persiana-belo-horizonte'
@@ -522,6 +533,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/catalogo'
+    | '/checkout'
     | '/cortina-romana'
     | '/faq'
     | '/persiana-belo-horizonte'
@@ -570,6 +582,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
   CatalogoRoute: typeof CatalogoRoute
+  CheckoutRoute: typeof CheckoutRoute
   CortinaRomanaRoute: typeof CortinaRomanaRoute
   FaqRoute: typeof FaqRoute
   PersianaBeloHorizonteRoute: typeof PersianaBeloHorizonteRoute
@@ -721,6 +734,13 @@ declare module '@tanstack/react-router' {
       path: '/cortina-romana'
       fullPath: '/cortina-romana'
       preLoaderRoute: typeof CortinaRomanaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/catalogo': {
@@ -964,6 +984,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
   CatalogoRoute: CatalogoRoute,
+  CheckoutRoute: CheckoutRoute,
   CortinaRomanaRoute: CortinaRomanaRoute,
   FaqRoute: FaqRoute,
   PersianaBeloHorizonteRoute: PersianaBeloHorizonteRoute,
@@ -991,12 +1012,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
