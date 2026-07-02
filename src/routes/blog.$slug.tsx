@@ -1,7 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { Footer } from "@/components/site/Footer";
-import { WhatsAppFAB } from "@/components/site/WhatsAppFAB";
 import { Newsletter } from "@/components/site/Newsletter";
 import { blogPosts, getPostBySlug } from "@/lib/blog-posts";
 import { Button } from "@/components/ui/button";
@@ -149,7 +148,6 @@ function BlogPostPage() {
 
       <Newsletter />
       <Footer />
-      <WhatsAppFAB />
     </div>
   );
 }

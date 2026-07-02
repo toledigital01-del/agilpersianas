@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { Footer } from "@/components/site/Footer";
-import { WhatsAppFAB } from "@/components/site/WhatsAppFAB";
 import { Newsletter } from "@/components/site/Newsletter";
 import { blogPosts } from "@/lib/blog-posts";
 import { Calendar, Clock } from "lucide-react";
@@ -120,7 +119,6 @@ function BlogIndex() {
 
       <Newsletter />
       <Footer />
-      <WhatsAppFAB />
     </div>
   );
 }

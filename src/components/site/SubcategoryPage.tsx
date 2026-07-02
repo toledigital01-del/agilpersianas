@@ -4,7 +4,6 @@ import { Star, Loader2, Search as SearchIcon, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { Footer } from "@/components/site/Footer";
-import { WhatsAppFAB } from "@/components/site/WhatsAppFAB";
 import { CartDrawer } from "@/components/site/CartDrawer";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/cart";
@@ -359,7 +358,6 @@ export function SubcategoryPage({
       </main>
 
       <Footer />
-      <WhatsAppFAB />
       <CartDrawer />
     </div>
   );

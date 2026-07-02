@@ -2,8 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { Footer } from "@/components/site/Footer";
-import { WhatsAppFAB } from "@/components/site/WhatsAppFAB";
-import { LumiWidget, openLumiWith } from "@/components/site/LumiWidget";
+import { openLumiWith } from "@/components/site/LumiWidget";
 import { CartDrawer } from "@/components/site/CartDrawer";
 import { Newsletter } from "@/components/site/Newsletter";
 import { supabase } from "@/integrations/supabase/client";
@@ -250,8 +249,6 @@ function TelaMosquiteiraPage() {
       </main>
       <Footer />
       <CartDrawer />
-      <WhatsAppFAB />
-      <LumiWidget />
     </div>
   );
 }

@@ -2,7 +2,6 @@ import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { Footer } from "@/components/site/Footer";
-import { WhatsAppFAB } from "@/components/site/WhatsAppFAB";
 import { CartDrawer } from "@/components/site/CartDrawer";
 import { supabase } from "@/integrations/supabase/client";
 import { Star } from "lucide-react";
@@ -217,7 +216,6 @@ function CatalogoPage() {
       </main>
 
       <Footer />
-      <WhatsAppFAB />
       <CartDrawer />
     </div>
   );

@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { Footer } from "@/components/site/Footer";
-import { WhatsAppFAB } from "@/components/site/WhatsAppFAB";
 import {
   Accordion,
   AccordionContent,
@@ -142,7 +141,6 @@ function FAQPage() {
         </section>
       </main>
       <Footer />
-      <WhatsAppFAB />
     </div>
   );
 }

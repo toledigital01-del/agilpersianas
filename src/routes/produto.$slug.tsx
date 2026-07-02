@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { Footer } from "@/components/site/Footer";
-import { WhatsAppFAB } from "@/components/site/WhatsAppFAB";
 import { ProductGallery, type GalleryImage } from "@/components/product/ProductGallery";
 import { BuyBox } from "@/components/product/BuyBox";
 import { TrustBar } from "@/components/product/TrustBar";
@@ -256,7 +255,6 @@ function ProductPage() {
       <QuoteSection />
 
       <Footer />
-      <WhatsAppFAB />
     </div>
   );
 }

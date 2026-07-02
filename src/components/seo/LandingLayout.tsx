@@ -2,7 +2,6 @@ import { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { Footer } from "@/components/site/Footer";
-import { WhatsAppFAB } from "@/components/site/WhatsAppFAB";
 import { TrustBar } from "@/components/site/TrustBar";
 import { Newsletter } from "@/components/site/Newsletter";
 import { Button } from "@/components/ui/button";
@@ -212,7 +211,6 @@ export function LandingLayout({
       </main>
 
       <Footer />
-      <WhatsAppFAB />
     </div>
   );
 }

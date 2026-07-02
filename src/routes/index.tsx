@@ -13,9 +13,6 @@ import { DiscountsGrid } from "@/components/site/DiscountsGrid";
 import { Testimonials } from "@/components/site/Testimonials";
 import { Newsletter } from "@/components/site/Newsletter";
 import { Footer } from "@/components/site/Footer";
-import { WhatsAppFAB } from "@/components/site/WhatsAppFAB";
-import { LumiWidget } from "@/components/site/LumiWidget";
-
 import { AutomationSection } from "@/components/site/AutomationSection";
 import { MosquitoSection } from "@/components/site/MosquitoSection";
 import { RoomSimulator } from "@/components/site/RoomSimulator";
@@ -77,8 +74,6 @@ function Index() {
         <Newsletter />
       </main>
       <Footer />
-      <WhatsAppFAB />
-      <LumiWidget />
     </div>
   );
 }
