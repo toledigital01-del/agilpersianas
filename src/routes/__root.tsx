@@ -1,4 +1,4 @@
-import { Outlet, Link, createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, Link, createRootRouteWithContext, HeadContent, Scripts, useRouterState } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/use-auth";
@@ -6,6 +6,8 @@ import { CartProvider } from "@/lib/cart";
 import { CartDrawer } from "@/components/site/CartDrawer";
 import { SocialProofToasts } from "@/components/site/SocialProofToasts";
 import { SeoHead } from "@/components/site/SeoHead";
+import { LumiWidget } from "@/components/site/LumiWidget";
+import { WhatsAppFAB } from "@/components/site/WhatsAppFAB";
 import { useSiteTheme } from "@/lib/theme";
 import { META_PIXEL_ID, GA4_MEASUREMENT_ID } from "@/lib/analytics";
 
@@ -106,6 +108,8 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isSite = !pathname.startsWith("/admin") && !pathname.startsWith("/auth");
   useSiteTheme();
   return (
     <QueryClientProvider client={queryClient}>
@@ -116,6 +120,12 @@ function RootComponent() {
           <CartDrawer />
           <Toaster richColors position="top-right" />
           <SocialProofToasts />
+          {isSite && (
+            <>
+              <LumiWidget />
+              <WhatsAppFAB />
+            </>
+          )}
         </CartProvider>
       </AuthProvider>
     </QueryClientProvider>
