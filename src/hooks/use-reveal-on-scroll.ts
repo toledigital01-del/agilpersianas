@@ -24,8 +24,21 @@ export function useRevealOnScroll() {
       },
       { threshold: 0.12, rootMargin: "0px 0px -60px 0px" },
     );
-    const els = document.querySelectorAll<HTMLElement>("[data-reveal]");
-    els.forEach((el) => io.observe(el));
-    return () => io.disconnect();
+    const observed = new WeakSet<Element>();
+    const observeAll = () => {
+      document.querySelectorAll<HTMLElement>("[data-reveal]").forEach((el) => {
+        if (observed.has(el) || el.classList.contains("is-visible")) return;
+        observed.add(el);
+        io.observe(el);
+      });
+    };
+    observeAll();
+    // Reobserve as async content (queries, lazy sections) mounts new nodes.
+    const mo = new MutationObserver(() => observeAll());
+    mo.observe(document.body, { childList: true, subtree: true });
+    return () => {
+      mo.disconnect();
+      io.disconnect();
+    };
   }, []);
 }
