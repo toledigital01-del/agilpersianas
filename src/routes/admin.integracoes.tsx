@@ -458,3 +458,54 @@ function EndpointStatus({
     </div>
   );
 }
+
+function ShippingOriginConfig() {
+  const { value, setValue, save, loading, saving } = useSiteSetting<{ origin_cep: string }>(
+    "shipping",
+    { origin_cep: "36080220" },
+  );
+
+  const maskCep = (v: string) => {
+    const d = v.replace(/\D/g, "").slice(0, 8);
+    return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
+  };
+
+  return (
+    <div className="mt-6 border-t pt-6">
+      <h3 className="font-medium mb-1">CEP de origem (remetente)</h3>
+      <p className="text-sm text-muted-foreground mb-3">
+        Endereço de onde os pedidos são despachados. Usado como <code>SellerCEP</code> nas cotações
+        Frenet.
+      </p>
+      <div className="flex gap-2 items-end max-w-md">
+        <div className="flex-1">
+          <Label htmlFor="origin-cep" className="text-xs text-muted-foreground">
+            CEP de origem
+          </Label>
+          <Input
+            id="origin-cep"
+            value={maskCep(value.origin_cep ?? "")}
+            onChange={(e) => setValue({ ...value, origin_cep: e.target.value.replace(/\D/g, "") })}
+            placeholder="00000-000"
+            inputMode="numeric"
+            disabled={loading}
+            className="mt-1"
+          />
+        </div>
+        <Button
+          onClick={async () => {
+            const digits = (value.origin_cep ?? "").replace(/\D/g, "");
+            if (digits.length !== 8) {
+              toast.error("Informe um CEP válido (8 dígitos)");
+              return;
+            }
+            await save({ origin_cep: digits });
+          }}
+          disabled={loading || saving}
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}
+        </Button>
+      </div>
+    </div>
+  );
+}
