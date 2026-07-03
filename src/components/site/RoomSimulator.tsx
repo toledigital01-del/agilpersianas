@@ -517,7 +517,7 @@ function RoomSimulatorInner() {
 
         <div className="mt-10 grid gap-6 lg:grid-cols-[1.05fr_1fr]">
           {/* COLUNA ESQUERDA — preview / before-after */}
-          <div className="rounded-3xl border bg-card p-3 shadow-elegant sm:p-4">
+          <div className="rounded-3xl border bg-card p-3 shadow-elegant sm:p-4 lg:sticky lg:top-24 lg:self-start">
             {!original && (
               <div className="flex aspect-[4/3] flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-primary/30 bg-muted/40 p-6 text-center">
                 <div className="rounded-full bg-primary/10 p-4">
