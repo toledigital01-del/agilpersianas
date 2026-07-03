@@ -16,6 +16,8 @@ import {
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
   checkAsaas,
@@ -23,6 +25,7 @@ import {
   type AsaasCheckResult,
   type FrenetCheckResult,
 } from "@/lib/integrations.functions";
+import { useSiteSetting } from "@/hooks/use-site-setting";
 
 export const Route = createFileRoute("/admin/integracoes")({ component: IntegrationsPage });
 
@@ -223,6 +226,8 @@ function IntegrationsPage() {
         </div>
 
         <FrenetStatus frenet={frenet} />
+
+        <ShippingOriginConfig />
 
         <div className="mt-6 border-t pt-6">
           <h3 className="font-medium mb-3">Passo a passo</h3>
