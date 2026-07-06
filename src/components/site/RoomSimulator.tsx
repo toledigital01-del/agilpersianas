@@ -1,8 +1,28 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Camera, Upload, Sparkles, Loader2, Download, RotateCcw, Check, ShoppingBag, MessageCircle } from "lucide-react";
+import {
+  Camera,
+  Upload,
+  Sparkles,
+  Loader2,
+  Download,
+  RotateCcw,
+  Check,
+  ShoppingBag,
+  MessageCircle,
+  Share2,
+  Image as ImageIcon,
+  Sun,
+  Maximize2,
+  ShieldCheck,
+  Clock,
+  Gift,
+  ArrowLeftRight,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { paletteFor, type FabricColor } from "@/lib/fabric-palettes";
+import { trackEvent } from "@/lib/analytics";
+import { useSiteContact, whatsappLink } from "@/hooks/use-site-contact";
 
 type ColorOpt = { color: string; hex: string; img: string; swatch?: string };
 type Product = {
