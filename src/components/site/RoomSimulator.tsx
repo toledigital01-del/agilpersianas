@@ -525,8 +525,11 @@ function RoomSimulatorInner() {
         try {
           const blob = await (await fetch(result)).blob();
           const file = new File([blob], `agil-simulacao.jpg`, { type: blob.type || "image/jpeg" });
-          // @ts-expect-error - canShare pode não existir em todos os browsers
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          const nav = navigator as Navigator & {
+            canShare?: (data: { files: File[] }) => boolean;
+            share?: (data: unknown) => Promise<void>;
+          };
+          if (nav.canShare && nav.canShare({ files: [file] })) {
             await (navigator as any).share({ files: [file], title: "Minha janela com a Ágil Persianas", text: whatsappText });
             return;
           }
