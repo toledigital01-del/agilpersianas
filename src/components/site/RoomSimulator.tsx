@@ -509,33 +509,114 @@ function RoomSimulatorInner() {
     a.href = result;
     a.download = `agil-simulacao-${product?.id ?? "persiana"}.png`;
     a.click();
+    trackEvent("simulator_download", { product: product?.name, color: color?.color });
   }
 
-  const whatsappMsg = encodeURIComponent(
-    `Olá! Acabei de simular a ${product?.name ?? "persiana"} (cor ${color?.color ?? ""}) no meu ambiente pelo site da Ágil Persianas e gostaria de um orçamento.`,
-  );
+  const contact = useSiteContact();
+  const whatsappText = `Olá! Acabei de simular a ${product?.name ?? "persiana"} (cor ${color?.color ?? ""}) no meu ambiente pelo site da Ágil Persianas e gostaria de um orçamento.`;
+  const whatsappHref = whatsappLink(contact.whatsapp, whatsappText);
+
+  async function shareResult() {
+    if (!result) return;
+    trackEvent("simulator_share", { product: product?.name, color: color?.color });
+    try {
+      if (typeof navigator !== "undefined" && "share" in navigator) {
+        // Tenta compartilhar como arquivo (mobile moderno).
+        try {
+          const blob = await (await fetch(result)).blob();
+          const file = new File([blob], `agil-simulacao.jpg`, { type: blob.type || "image/jpeg" });
+          // @ts-expect-error - canShare pode não existir em todos os browsers
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await (navigator as any).share({ files: [file], title: "Minha janela com a Ágil Persianas", text: whatsappText });
+            return;
+          }
+        } catch {
+          /* cai no fallback */
+        }
+        await (navigator as any).share({ title: "Ágil Persianas", text: whatsappText, url: window.location.href });
+        return;
+      }
+    } catch {
+      /* usuário cancelou ou browser não suporta */
+    }
+    // Fallback: WhatsApp
+    window.open(whatsappHref, "_blank", "noopener,noreferrer");
+  }
+
+  // Slider before/after (drag)
+  const compareRef = useRef<HTMLDivElement>(null);
+  function onCompareMove(clientX: number) {
+    const el = compareRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const pct = ((clientX - rect.left) / rect.width) * 100;
+    setCompare(Math.max(0, Math.min(100, pct)));
+  }
 
   return (
     <section
       id="simulador-ambiente"
-      className="relative overflow-hidden border-y border-border bg-gradient-to-b from-background via-muted/30 to-background py-16 sm:py-20"
+      className="relative overflow-hidden border-y border-border bg-gradient-to-b from-background via-muted/30 to-background py-14 sm:py-20"
     >
+      {/* Ornamentos suaves — inspirado no visual dos referências (Bali, Novo) */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+      <div aria-hidden className="pointer-events-none absolute -top-40 -right-40 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
+
       <div className="container mx-auto px-4">
+        {/* ============ HERO ============ */}
         <div className="mx-auto max-w-3xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-primary">
             <Sparkles className="h-3.5 w-3.5" />
-            Simulador IA · Exclusivo
+            Simulador com IA · Grátis · Sem login
           </div>
-          <h2 className="font-display mt-4 text-3xl sm:text-4xl md:text-5xl leading-tight">
+          <h2 className="font-display mt-4 text-3xl sm:text-4xl md:text-6xl leading-[1.05] tracking-tight">
             Veja a persiana <em className="not-italic text-primary">na sua janela</em> antes de comprar.
           </h2>
-          <p className="mt-3 text-muted-foreground sm:text-lg">
-            Envie uma foto do ambiente, escolha o modelo e a cor. A IA instala a persiana na imagem da sua janela em segundos —
-            fotorrealista, sem compromisso.
+          <p className="mt-4 text-muted-foreground sm:text-lg">
+            Envie uma foto do seu ambiente, escolha o modelo e a cor. Nossa IA instala a persiana
+            na foto em segundos — fotorrealista, sem cadastro e sem compromisso.
           </p>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/70 px-3 py-1.5 text-[11px] font-semibold text-foreground/70">
+              <Gift className="h-3.5 w-3.5 text-primary" /> 100% grátis
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/70 px-3 py-1.5 text-[11px] font-semibold text-foreground/70">
+              <ShieldCheck className="h-3.5 w-3.5 text-primary" /> Sua foto não é armazenada
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/70 px-3 py-1.5 text-[11px] font-semibold text-foreground/70">
+              <Clock className="h-3.5 w-3.5 text-primary" /> Resultado em segundos
+            </span>
+          </div>
         </div>
 
-        <div className="mt-10 grid gap-6 lg:grid-cols-[1.05fr_1fr]">
+        {/* ============ COMO FUNCIONA — 3 PASSOS ============ */}
+        <div className="mx-auto mt-10 grid max-w-5xl gap-3 sm:grid-cols-3">
+          {[
+            { n: 1, icon: Upload, title: "Envie sua foto", desc: "Ou escolha um ambiente de amostra." },
+            { n: 2, icon: Sparkles, title: "Escolha modelo e cor", desc: "Rolô, Romana, Double Vision e mais." },
+            { n: 3, icon: ImageIcon, title: "Veja instalada", desc: "Compare antes/depois, baixe e compartilhe." },
+          ].map((s) => {
+            const Icon = s.icon;
+            return (
+              <div key={s.n} className="group flex items-center gap-3 rounded-2xl border border-border/60 bg-card/70 p-4 backdrop-blur transition hover:border-primary/40 hover:shadow-md">
+                <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-md">
+                  <Icon className="h-5 w-5" />
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-foreground text-[10px] font-bold text-background">
+                    {s.n}
+                  </span>
+                </div>
+                <div>
+                  <div className="font-display text-base leading-tight">{s.title}</div>
+                  <div className="text-xs text-muted-foreground">{s.desc}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ============ PAINEL DO SIMULADOR ============ */}
+        <div className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_1fr]">
           {/* COLUNA ESQUERDA — preview / before-after */}
           <div className="rounded-3xl border bg-card p-3 shadow-elegant sm:p-4 lg:sticky lg:top-24 lg:self-start">
             {!original && (
@@ -589,6 +670,9 @@ function RoomSimulatorInner() {
             {original && !result && (
               <div className="relative overflow-hidden rounded-2xl">
                 <img src={original} alt="Foto enviada do ambiente" className="block w-full" />
+                <div className="pointer-events-none absolute top-3 left-3 rounded-full bg-background/90 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-foreground shadow-sm backdrop-blur">
+                  Sua janela
+                </div>
                 {loading && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/80 backdrop-blur-sm">
                     <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -600,23 +684,83 @@ function RoomSimulatorInner() {
             )}
 
             {original && result && (
-              <div className="relative overflow-hidden rounded-2xl">
+              <div
+                ref={compareRef}
+                className="relative select-none overflow-hidden rounded-2xl"
+                onMouseMove={(e) => e.buttons === 1 && onCompareMove(e.clientX)}
+                onTouchMove={(e) => onCompareMove(e.touches[0].clientX)}
+              >
+                {/* base = resultado (depois) */}
                 <img src={result} alt="Ambiente com a persiana instalada" className="block w-full" draggable={false} />
-                <div className="pointer-events-none absolute top-3 left-3 rounded-full bg-primary px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary-foreground">
-                  Resultado
+                {/* overlay = original (antes), recortado */}
+                <div
+                  className="pointer-events-none absolute inset-y-0 left-0 overflow-hidden"
+                  style={{ width: `${compare}%` }}
+                >
+                  <img
+                    src={original}
+                    alt="Foto original antes da simulação"
+                    className="block h-full w-auto max-w-none"
+                    style={{ width: compareRef.current ? `${compareRef.current.clientWidth}px` : "100%" }}
+                    draggable={false}
+                  />
                 </div>
+                {/* labels */}
+                <div className="pointer-events-none absolute top-3 left-3 rounded-full bg-background/90 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-foreground shadow-sm backdrop-blur">
+                  Antes
+                </div>
+                <div className="pointer-events-none absolute top-3 right-3 rounded-full bg-primary px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary-foreground shadow-sm">
+                  Depois
+                </div>
+                {/* handle */}
+                <div
+                  className="absolute inset-y-0 z-10 -translate-x-1/2 cursor-ew-resize"
+                  style={{ left: `${compare}%` }}
+                  onMouseDown={(e) => onCompareMove(e.clientX)}
+                  onTouchStart={(e) => onCompareMove(e.touches[0].clientX)}
+                >
+                  <div className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 border-l-2 border-white/90 shadow-[0_0_0_1px_rgba(0,0,0,0.15)]" />
+                  <div className="pointer-events-none absolute top-1/2 left-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-2 ring-white">
+                    <ArrowLeftRight className="h-4 w-4" />
+                  </div>
+                </div>
+                {/* range invisível para acessibilidade / teclado */}
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={compare}
+                  onChange={(e) => setCompare(Number(e.target.value))}
+                  aria-label="Comparar antes e depois"
+                  className="absolute inset-x-0 bottom-2 mx-auto w-2/3 opacity-0"
+                />
               </div>
             )}
 
             {original && (
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                <button
-                  type="button"
-                  onClick={reset}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium hover:border-primary"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" /> Outra foto
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={reset}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium hover:border-primary"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" /> Outra foto
+                  </button>
+                  <div className="hidden items-center gap-1 sm:flex">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Amostras:</span>
+                    {DEMO_ROOMS.map((d) => (
+                      <button
+                        key={d.label}
+                        type="button"
+                        onClick={() => useDemoRoom(d.url)}
+                        className="rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-semibold transition hover:border-primary hover:bg-primary/5"
+                      >
+                        {d.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 {result && (
                   <div className="flex items-center gap-2">
                     <button
@@ -624,7 +768,14 @@ function RoomSimulatorInner() {
                       onClick={downloadResult}
                       className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium hover:border-primary"
                     >
-                      <Download className="h-3.5 w-3.5" /> Baixar imagem
+                      <Download className="h-3.5 w-3.5" /> Baixar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={shareResult}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium hover:border-primary"
+                    >
+                      <Share2 className="h-3.5 w-3.5" /> Compartilhar
                     </button>
                   </div>
                 )}
@@ -650,22 +801,31 @@ function RoomSimulatorInner() {
 
           {/* COLUNA DIREITA — controles */}
           <div className="rounded-3xl border bg-gradient-to-br from-card via-card to-muted/40 p-6 shadow-elegant ring-1 ring-primary/5">
-            {/* Passo 1 — Categoria */}
+            {/* Passo 1 — Categoria (chips) */}
             <div>
               <StepHeader n={1} title="Escolha o produto" />
-              <div className="relative mt-3">
-                <select
-                  value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full appearance-none rounded-xl border border-border bg-background px-4 py-3 pr-10 text-sm font-medium shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-                >
-                {catalog.categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.label}
-                    </option>
+              <div className="-mx-1 mt-3 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {catalogLoading && catalog.categories.length === 0 &&
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="h-9 w-24 shrink-0 animate-pulse rounded-full bg-muted" />
                   ))}
-                </select>
-                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">▾</span>
+                {catalog.categories.map((c) => {
+                  const active = categoryId === c.id;
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setCategoryId(c.id)}
+                      className={`shrink-0 snap-start whitespace-nowrap rounded-full px-4 py-2 text-xs font-bold uppercase tracking-widest transition ${
+                        active
+                          ? "bg-primary text-primary-foreground shadow-glow"
+                          : "border border-border bg-background text-foreground/70 hover:border-primary hover:text-foreground"
+                      }`}
+                    >
+                      {c.label}
+                    </button>
+                  );
+                })}
               </div>
               <p className="mt-1.5 text-xs text-muted-foreground">{category?.hint ?? (catalogLoading ? "Carregando catálogo…" : "Nenhum produto disponível")}</p>
             </div>
@@ -795,14 +955,16 @@ function RoomSimulatorInner() {
               <div className="mt-5 grid gap-2 sm:grid-cols-2">
                 <a
                   href={product.href}
+                  onClick={() => trackEvent("simulator_view_product", { product: product.name })}
                   className="inline-flex items-center justify-center gap-1.5 rounded-full bg-foreground px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-background transition hover:opacity-90"
                 >
                   <ShoppingBag className="h-3.5 w-3.5" /> Ver e comprar
                 </a>
                 <a
-                  href={`https://wa.me/5532991668800?text=${whatsappMsg}`}
+                  href={whatsappHref}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() => trackEvent("simulator_whatsapp", { product: product.name, color: color?.color })}
                   className="inline-flex items-center justify-center gap-1.5 rounded-full border border-border bg-background px-4 py-2.5 text-xs font-bold uppercase tracking-widest transition hover:border-primary"
                 >
                   <MessageCircle className="h-3.5 w-3.5" /> Falar no WhatsApp
@@ -814,6 +976,59 @@ function RoomSimulatorInner() {
               A simulação é uma representação artística gerada por IA. Pequenas variações de tom, textura e caimento podem
               ocorrer no produto final. Sua foto é usada apenas para gerar a prévia e não é armazenada.
             </p>
+          </div>
+        </div>
+
+        {/* ============ DICAS PARA UMA BOA FOTO ============ */}
+        <div className="mx-auto mt-14 max-w-5xl">
+          <div className="text-center">
+            <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Dica</span>
+            <h3 className="font-display mt-2 text-2xl sm:text-3xl">Fotos boas ficam ainda melhores</h3>
+            <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
+              A IA identifica a janela sozinha, mas fotos como essas geram resultados mais realistas.
+            </p>
+          </div>
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            {[
+              { icon: Maximize2, title: "Janela inteira no quadro", desc: "Do batente ao peitoril, sem cortar as bordas." },
+              { icon: Sun, title: "Luz natural do lado", desc: "Evite contraluz forte vindo direto da janela." },
+              { icon: Camera, title: "De frente, sem inclinar", desc: "Fique perpendicular à parede para não distorcer." },
+            ].map((t, i) => {
+              const Icon = t.icon;
+              return (
+                <div key={i} className="rounded-2xl border bg-card/70 p-5 backdrop-blur">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div className="mt-3 font-display text-lg">{t.title}</div>
+                  <p className="mt-1 text-sm text-muted-foreground">{t.desc}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ============ CTA FINAL ============ */}
+        <div className="mx-auto mt-14 max-w-4xl overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/10 via-card to-card p-8 text-center shadow-elegant sm:p-10">
+          <h3 className="font-display text-2xl sm:text-3xl">Gostou do que viu? Vamos medir juntos.</h3>
+          <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground sm:text-base">
+            Nossa equipe faz a medição gratuita na sua casa em Juiz de Fora e região, e o produto chega instalado.
+          </p>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+            <a
+              href="#orcamento"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground shadow-glow transition hover:-translate-y-0.5"
+            >
+              Pedir orçamento gratuito
+            </a>
+            <a
+              href={whatsappHref}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-6 py-3 text-sm font-bold uppercase tracking-widest transition hover:border-primary"
+            >
+              <MessageCircle className="h-4 w-4" /> Falar no WhatsApp
+            </a>
           </div>
         </div>
       </div>
